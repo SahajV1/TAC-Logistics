@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
-import { requireUser } from "@/lib/auth"
+import { requireAdmin } from "@/lib/auth"
 import { salarySchema } from "@/lib/schemas"
 
 type Result = { error?: string }
@@ -11,7 +11,7 @@ export async function saveSalary(
   id: string | null,
   values: unknown
 ): Promise<Result> {
-  const user = await requireUser()
+  const user = await requireAdmin()
   const parsed = salarySchema.safeParse(values)
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid data" }
@@ -57,7 +57,7 @@ export async function saveSalary(
 }
 
 export async function deleteSalary(id: string): Promise<Result> {
-  await requireUser()
+  await requireAdmin()
   const supabase = await createClient()
   const { error } = await supabase.from("salaries").delete().eq("id", id)
   if (error) return { error: error.message }
@@ -69,7 +69,7 @@ export async function toggleSalaryPaid(
   id: string,
   paid: boolean
 ): Promise<Result> {
-  await requireUser()
+  await requireAdmin()
   const supabase = await createClient()
   const { error } = await supabase
     .from("salaries")

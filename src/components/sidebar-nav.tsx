@@ -7,6 +7,7 @@ import {
   BellRing,
   Bus,
   FileText,
+  Fuel,
   LayoutDashboard,
   ScrollText,
   ShieldCheck,
@@ -24,6 +25,7 @@ const ICONS: Record<string, LucideIcon> = {
   Users,
   Bus,
   FileText,
+  Fuel,
   BellRing,
   Wallet,
   BarChart3,
@@ -39,7 +41,7 @@ export function SidebarNav({
   onNavigate?: () => void
 }) {
   const pathname = usePathname()
-  const items = NAV_ITEMS.filter((i) => !i.adminOnly || isAdmin)
+  const items = NAV_ITEMS.filter((i) => isAdmin || i.staffVisible)
 
   return (
     <nav className="flex flex-col gap-1 p-3">

@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth"
+import { requireAdmin } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { PageHeader } from "@/components/page-header"
 import { ReportView, type BranchRow, type MonthRow } from "./report-view"
@@ -9,7 +9,7 @@ export const metadata = { title: "Reports" }
 const n = (v: unknown) => Number(v || 0)
 
 export default async function ReportsPage() {
-  const user = await requireUser()
+  const user = await requireAdmin()
   const supabase = await createClient()
 
   const { data } = await supabase

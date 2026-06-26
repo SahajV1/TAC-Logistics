@@ -5,8 +5,8 @@ import type {
   TruckType,
 } from "@/lib/types"
 
-export const APP_NAME = "TMS"
-export const APP_FULL_NAME = "Transport Management System"
+export const APP_NAME = "TAC Logistics"
+export const APP_FULL_NAME = "TAC Logistics"
 
 export const DOC_TYPES: { value: DocType; label: string }[] = [
   { value: "rc", label: "Registration (RC)" },
@@ -55,15 +55,19 @@ export type NavItem = {
   href: string
   label: string
   icon: string // lucide icon name, resolved in the sidebar
-  adminOnly?: boolean
+  adminOnly?: boolean // shows an "admin" badge on the item
+  staffVisible?: boolean // visible to non-admin staff (admins see everything)
 }
 
+// Non-admin staff only see Dispatch, Trucks and Documents. Everything else is
+// admin-only (enforced both here and by requireAdmin() on each page/action).
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: "LayoutDashboard" },
-  { href: "/dispatch", label: "Dispatch", icon: "Truck" },
+  { href: "/dispatch", label: "Dispatch", icon: "Truck", staffVisible: true },
   { href: "/drivers", label: "Drivers", icon: "Users" },
-  { href: "/trucks", label: "Trucks", icon: "Bus" },
-  { href: "/documents", label: "Documents", icon: "FileText" },
+  { href: "/trucks", label: "Trucks", icon: "Bus", staffVisible: true },
+  { href: "/fuel-stations", label: "Fuel Stations", icon: "Fuel" },
+  { href: "/documents", label: "Documents", icon: "FileText", staffVisible: true },
   { href: "/alerts", label: "Alerts", icon: "BellRing" },
   { href: "/salaries", label: "Salaries", icon: "Wallet" },
   { href: "/reports", label: "Reports", icon: "BarChart3" },

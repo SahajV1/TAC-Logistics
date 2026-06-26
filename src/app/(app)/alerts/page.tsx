@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { AlertTriangle, CalendarClock, CircleAlert } from "lucide-react"
-import { requireUser } from "@/lib/auth"
+import { requireAdmin } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { PageHeader } from "@/components/page-header"
 import { StatCard } from "@/components/stat-card"
@@ -29,7 +29,7 @@ import type { Driver, DocumentRow } from "@/lib/types"
 export const metadata = { title: "Alerts" }
 
 export default async function AlertsPage() {
-  await requireUser()
+  await requireAdmin()
   const supabase = await createClient()
 
   const [docRes, driverRes] = await Promise.all([

@@ -128,6 +128,17 @@ export interface Salary {
   branches?: Pick<Branch, "id" | "name"> | null
 }
 
+export interface FuelStation {
+  id: string
+  name: string
+  location: string | null
+  contact: string | null
+  status: EntityStatus
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface AuditLog {
   id: number
   table_name: string

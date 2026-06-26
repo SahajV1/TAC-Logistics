@@ -9,6 +9,7 @@ import {
   Truck,
   Users,
 } from "lucide-react"
+import { redirect } from "next/navigation"
 import { requireUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { PageHeader } from "@/components/page-header"
@@ -42,6 +43,8 @@ const sum = <T,>(rows: T[], pick: (r: T) => number) =>
 
 export default async function DashboardPage() {
   const user = await requireUser()
+  // Staff don't have a dashboard — send them to their first allowed page.
+  if (!user.isAdmin) redirect("/dispatch")
   const supabase = await createClient()
 
   const monthStart = format(startOfMonth(new Date()), "yyyy-MM-dd")

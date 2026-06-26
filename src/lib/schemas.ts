@@ -79,6 +79,13 @@ export const salarySchema = z.object({
   branch_id: z.string().optional(),
 })
 
+export const fuelStationSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  location: z.string().optional(),
+  contact: z.string().optional(),
+  status: z.enum(["active", "inactive"]),
+})
+
 export const userSchema = z.object({
   full_name: z.string().trim().min(1, "Name is required"),
   email: z.email("Enter a valid email"),
@@ -97,4 +104,5 @@ export type DriverFormValues = z.infer<typeof driverSchema>
 export type TruckFormValues = z.infer<typeof truckSchema>
 export type DocumentFormValues = z.infer<typeof documentSchema>
 export type SalaryFormValues = z.infer<typeof salarySchema>
+export type FuelStationFormValues = z.infer<typeof fuelStationSchema>
 export type UserFormValues = z.infer<typeof userSchema>

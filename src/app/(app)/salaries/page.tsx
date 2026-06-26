@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth"
+import { requireAdmin } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { PageHeader } from "@/components/page-header"
 import { SalaryTable } from "./salary-table"
@@ -8,7 +8,7 @@ import type { Branch, Salary } from "@/lib/types"
 export const metadata = { title: "Salaries" }
 
 export default async function SalariesPage() {
-  const user = await requireUser()
+  const user = await requireAdmin()
   const supabase = await createClient()
 
   const [salaryRes, driverRes, staffRes, branchRes] = await Promise.all([

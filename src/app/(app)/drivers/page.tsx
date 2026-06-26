@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth"
+import { requireAdmin } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { PageHeader } from "@/components/page-header"
 import { DriverTable } from "./driver-table"
@@ -7,7 +7,7 @@ import type { Branch, Driver } from "@/lib/types"
 export const metadata = { title: "Drivers" }
 
 export default async function DriversPage() {
-  const user = await requireUser()
+  const user = await requireAdmin()
   const supabase = await createClient()
 
   const [driverRes, branchRes] = await Promise.all([

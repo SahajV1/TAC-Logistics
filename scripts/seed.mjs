@@ -26,18 +26,24 @@ const supabase = createClient(url, serviceKey, {
 })
 
 // ============================================================================
-// EDIT THESE — replace with the real names & emails for the 9 staff + admin.
-// (If you only have names, keep the @tms.local emails or change the domain.)
+// Staff roster + monthly salaries (from the TAC Logistics handover sheet).
+// `salary` seeds a row in the salaries table for SALARY_MONTH.
 // ============================================================================
 const ADMIN = { full_name: "Shivansh", email: "shivansh@tms.local", phone: "" }
 
 const LUCKNOW_STAFF = [
-  { full_name: "Sahaj", email: "sahaj@tms.local" },
+  { full_name: "Anuj Pandey", email: "anuj.pandey@taclogistics.local", salary: 25000 },
+  { full_name: "Uttakarsh", email: "uttakarsh@taclogistics.local", salary: 15000 },
+  { full_name: "Shivprakash", email: "shivprakash@taclogistics.local", salary: 20000 },
+  { full_name: "Aditya", email: "aditya@taclogistics.local", salary: 15000 },
 ]
 
 const GHAZIABAD_STAFF = [
-  { full_name: "Parth", email: "parth@tms.local" },
+  { full_name: "Uday Yadav", email: "uday.yadav@taclogistics.local", salary: 30000 },
 ]
+
+// First day of the salary month these figures apply to.
+const SALARY_MONTH = "2026-06-01"
 // ============================================================================
 
 async function getBranchId(name) {
@@ -77,6 +83,46 @@ async function createAccount(person, role, branchId) {
   console.log(`✓  created ${role.padEnd(5)} ${person.email}`)
 }
 
+// Insert a salary row for a staff member (idempotent per staff + month).
+async function seedSalary(person, branchId) {
+  if (person.salary == null) return
+
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("email", person.email)
+    .maybeSingle()
+  if (!prof) {
+    console.log(`   ! no profile for ${person.email} — salary skipped`)
+    return
+  }
+
+  const { data: existing } = await supabase
+    .from("salaries")
+    .select("id")
+    .eq("staff_id", prof.id)
+    .eq("month", SALARY_MONTH)
+    .maybeSingle()
+  if (existing) {
+    console.log(`   •  salary exists: ${person.full_name}`)
+    return
+  }
+
+  const { error } = await supabase.from("salaries").insert({
+    branch_id: branchId,
+    person_type: "staff",
+    staff_id: prof.id,
+    person_name: person.full_name,
+    month: SALARY_MONTH,
+    base_salary: person.salary,
+    bonus: 0,
+    deductions: 0,
+    paid: false,
+  })
+  if (error) console.error(`   ✗  salary ${person.full_name}: ${error.message}`)
+  else console.log(`   ✓  salary ${person.full_name}: ₹${person.salary}`)
+}
+
 async function main() {
   console.log("Seeding accounts…\n")
   const lucknow = await getBranchId("Lucknow")
@@ -85,6 +131,10 @@ async function main() {
   await createAccount(ADMIN, "admin", null)
   for (const s of LUCKNOW_STAFF) await createAccount(s, "staff", lucknow)
   for (const s of GHAZIABAD_STAFF) await createAccount(s, "staff", ghaziabad)
+
+  console.log("\nSeeding salaries…")
+  for (const s of LUCKNOW_STAFF) await seedSalary(s, lucknow)
+  for (const s of GHAZIABAD_STAFF) await seedSalary(s, ghaziabad)
 
   console.log(`\nDone. Default password for all accounts: ${password}`)
   console.log("Tell staff to sign in and change it.")

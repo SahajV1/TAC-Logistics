@@ -394,6 +394,45 @@ create policy audit_select on public.audit_logs for select to authenticated
   using (public.is_admin() or branch_id = public.user_branch_id());
 
 -- ============================================================================
+-- FUEL STATIONS (company-wide master list; admin-managed)
+-- ============================================================================
+create table if not exists public.fuel_stations (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null unique,
+  location    text,
+  contact     text,
+  status      text not null default 'active' check (status in ('active','inactive')),
+  created_by  uuid references public.profiles(id) on delete set null,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+drop trigger if exists trg_fuel_stations_updated on public.fuel_stations;
+create trigger trg_fuel_stations_updated before update on public.fuel_stations
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_audit_fuel_stations on public.fuel_stations;
+create trigger trg_audit_fuel_stations
+  after insert or update or delete on public.fuel_stations
+  for each row execute function public.audit_trigger();
+
+alter table public.fuel_stations enable row level security;
+
+drop policy if exists fuel_stations_select on public.fuel_stations;
+create policy fuel_stations_select on public.fuel_stations for select to authenticated
+  using (true);
+
+drop policy if exists fuel_stations_admin_write on public.fuel_stations;
+create policy fuel_stations_admin_write on public.fuel_stations for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+insert into public.fuel_stations (name) values
+  ('S.S Fillings'),
+  ('Tee Ar Fillngs'),
+  ('Bansis')
+on conflict (name) do nothing;
+
+-- ============================================================================
 -- STORAGE (private bucket for document scans)
 -- ============================================================================
 insert into storage.buckets (id, name, public)
