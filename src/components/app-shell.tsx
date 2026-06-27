@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { SidebarNav } from "./sidebar-nav"
 import { UserMenu } from "./user-menu"
+import { ThemeToggle } from "./theme-toggle"
 import { APP_NAME } from "@/lib/constants"
 
 export type ShellUser = {
@@ -85,6 +86,8 @@ export function AppShell({
           <Badge variant="outline" className="hidden font-normal sm:inline-flex">
             {user.isAdmin ? "All branches" : (user.branchName ?? "—")}
           </Badge>
+
+          <ThemeToggle />
 
           <UserMenu
             name={user.name}

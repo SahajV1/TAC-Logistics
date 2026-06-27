@@ -42,6 +42,6 @@ create policy fuel_stations_admin_write on public.fuel_stations for all to authe
 -- Seed the stations from the handover sheet (idempotent) ----------------------
 insert into public.fuel_stations (name) values
   ('S.S Fillings'),
-  ('Tee Ar Fillngs'),
+  ('Tee Ar Fillings'),
   ('Bansis')
 on conflict (name) do nothing;

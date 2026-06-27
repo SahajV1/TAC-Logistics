@@ -1,14 +1,29 @@
 "use client"
 
 import * as React from "react"
-import { useForm } from "react-hook-form"
+import { useForm, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { dispatchSchema, type DispatchFormValues } from "@/lib/schemas"
 import { saveDispatch } from "./actions"
-import { Form } from "@/components/ui/form"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -64,6 +79,7 @@ function toDefaults(
       truck_type: initial.truck_type,
       owner_details: initial.owner_details ?? "",
       rent_amount: Number(initial.rent_amount),
+      fuel_station: initial.fuel_station ?? "",
       status: initial.status,
       branch_id: initial.branch_id,
     }
@@ -84,9 +100,97 @@ function toDefaults(
     truck_type: "company",
     owner_details: "",
     rent_amount: 0,
+    fuel_station: "",
     status: "completed",
     branch_id: defaultBranchId ?? "",
   }
+}
+
+const NEW_STATION = "__new__"
+
+// Dropdown of saved fuel stations with an inline "add new" mode. A typed-in
+// station is saved to the master list on submit, so it's available next time.
+function FuelStationField({
+  control,
+  stations,
+}: {
+  control: Control<DispatchFormValues>
+  stations: string[]
+}) {
+  const [adding, setAdding] = React.useState(false)
+
+  return (
+    <FormField
+      control={control}
+      name="fuel_station"
+      render={({ field }) => {
+        const value = (field.value as string | undefined) ?? ""
+        // Keep an existing value visible even if it's not in the master list.
+        const options = Array.from(
+          new Set(
+            stations.concat(value && !adding ? [value] : []).filter(Boolean)
+          )
+        )
+        return (
+          <FormItem>
+            <FormLabel>Fuel station</FormLabel>
+            {adding ? (
+              <div className="flex gap-2">
+                <FormControl>
+                  <Input
+                    autoFocus
+                    placeholder="New fuel station name"
+                    value={value}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    onBlur={field.onBlur}
+                  />
+                </FormControl>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    field.onChange("")
+                    setAdding(false)
+                  }}
+                >
+                  Pick from list
+                </Button>
+              </div>
+            ) : (
+              <Select
+                value={value}
+                onValueChange={(v) => {
+                  if (v === NEW_STATION) {
+                    field.onChange("")
+                    setAdding(true)
+                  } else {
+                    field.onChange(v)
+                  }
+                }}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a fuel station" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {options.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={NEW_STATION}>
+                    ➕ Add new station…
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+            <FormMessage />
+          </FormItem>
+        )
+      }}
+    />
+  )
 }
 
 export function DispatchFormDialog({
@@ -95,6 +199,7 @@ export function DispatchFormDialog({
   drivers,
   trucks,
   branches,
+  fuelStations,
   isAdmin,
   defaultBranchId,
 }: {
@@ -103,6 +208,7 @@ export function DispatchFormDialog({
   drivers: DriverOption[]
   trucks: TruckOption[]
   branches: BranchOption[]
+  fuelStations: string[]
   isAdmin: boolean
   defaultBranchId: string | null
 }) {
@@ -284,6 +390,8 @@ export function DispatchFormDialog({
                 />
               </div>
             ) : null}
+
+            <FuelStationField control={form.control} stations={fuelStations} />
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <NumberField

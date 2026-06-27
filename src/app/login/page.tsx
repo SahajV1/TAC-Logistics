@@ -1,5 +1,6 @@
 import { Truck } from "lucide-react"
 import { LoginForm } from "./login-form"
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   Card,
   CardContent,
@@ -21,7 +22,10 @@ export default async function LoginPage({
     redirect && redirect.startsWith("/") ? redirect : "/"
 
   return (
-    <div className="flex min-h-dvh items-center justify-center p-4">
+    <div className="relative flex min-h-dvh items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
           <div className="bg-primary text-primary-foreground flex size-12 items-center justify-center rounded-xl">

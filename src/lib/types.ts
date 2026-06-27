@@ -100,11 +100,14 @@ export interface Dispatch {
   truck_type: TruckType
   owner_details: string | null
   rent_amount: number
+  fuel_station: string | null
   status: DispatchStatus
   created_by: string | null
   created_at: string
   updated_at: string
   branches?: Pick<Branch, "id" | "name"> | null
+  // joined creator (visible to admins; staff only see their own profile via RLS)
+  creator?: Pick<Profile, "id" | "full_name"> | null
 }
 
 export interface Salary {

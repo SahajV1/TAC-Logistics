@@ -66,7 +66,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dispatch", label: "Dispatch", icon: "Truck", staffVisible: true },
   { href: "/drivers", label: "Drivers", icon: "Users" },
   { href: "/trucks", label: "Trucks", icon: "Bus", staffVisible: true },
-  { href: "/fuel-stations", label: "Fuel Stations", icon: "Fuel" },
   { href: "/documents", label: "Documents", icon: "FileText", staffVisible: true },
   { href: "/alerts", label: "Alerts", icon: "BellRing" },
   { href: "/salaries", label: "Salaries", icon: "Wallet" },

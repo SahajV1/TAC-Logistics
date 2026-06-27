@@ -106,6 +106,7 @@ create table if not exists public.dispatches (
   truck_type      text not null default 'company' check (truck_type in ('company','rented')),
   owner_details   text,           -- rented trucks
   rent_amount     numeric(12,2) not null default 0,
+  fuel_station    text,           -- filling station used (free text; suggestions come from fuel_stations)
   status          text not null default 'completed' check (status in ('pending','in_transit','completed','cancelled')),
   created_by      uuid references public.profiles(id) on delete set null,
   created_at      timestamptz not null default now(),
@@ -428,7 +429,7 @@ create policy fuel_stations_admin_write on public.fuel_stations for all to authe
 
 insert into public.fuel_stations (name) values
   ('S.S Fillings'),
-  ('Tee Ar Fillngs'),
+  ('Tee Ar Fillings'),
   ('Bansis')
 on conflict (name) do nothing;
 

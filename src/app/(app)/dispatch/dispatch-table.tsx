@@ -42,6 +42,7 @@ export function DispatchTable({
   drivers,
   trucks,
   branches,
+  fuelStations,
   isAdmin,
   defaultBranchId,
 }: {
@@ -49,10 +50,11 @@ export function DispatchTable({
   drivers: DriverOption[]
   trucks: TruckOption[]
   branches: BranchOption[]
+  fuelStations: string[]
   isAdmin: boolean
   defaultBranchId: string | null
 }) {
-  const lookups = { drivers, trucks, branches, isAdmin, defaultBranchId }
+  const lookups = { drivers, trucks, branches, fuelStations, isAdmin, defaultBranchId }
 
   const columns: ColumnDef<Dispatch>[] = [
     {
@@ -91,6 +93,14 @@ export function DispatchTable({
       cell: ({ row }) => formatCurrency(Number(row.original.fuel_cost)),
     },
     {
+      accessorKey: "fuel_station",
+      header: "Fuel station",
+      cell: ({ row }) =>
+        row.original.fuel_station ?? (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
       id: "trip_cost",
       header: "Trip cost",
       accessorFn: (r) => tripCost(r),
@@ -113,6 +123,16 @@ export function DispatchTable({
             id: "branch",
             header: "Branch",
             accessorFn: (r: Dispatch) => r.branches?.name ?? "",
+          } as ColumnDef<Dispatch>,
+          {
+            id: "created_by",
+            header: "Filled by",
+            accessorFn: (r: Dispatch) => r.creator?.full_name ?? "",
+            cell: ({ row }) => (
+              <span className={row.original.creator ? "" : "text-muted-foreground"}>
+                {row.original.creator?.full_name ?? "—"}
+              </span>
+            ),
           } as ColumnDef<Dispatch>,
         ]
       : []),
@@ -162,6 +182,7 @@ export function DispatchTable({
     { header: "Truck Type", value: (d) => d.truck_type },
     { header: "Fuel Litres", value: (d) => Number(d.fuel_litres) },
     { header: "Fuel Cost", value: (d) => Number(d.fuel_cost) },
+    { header: "Fuel Station", value: (d) => d.fuel_station ?? "" },
     { header: "Advance", value: (d) => Number(d.advance_amount) },
     { header: "Misc", value: (d) => Number(d.misc_amount) },
     { header: "Rent", value: (d) => Number(d.rent_amount) },
@@ -169,6 +190,7 @@ export function DispatchTable({
     { header: "Owner Details", value: (d) => d.owner_details ?? "" },
     { header: "Status", value: (d) => DISPATCH_STATUS_LABELS[d.status] },
     { header: "Branch", value: (d) => d.branches?.name ?? "" },
+    { header: "Filled By", value: (d) => d.creator?.full_name ?? "" },
     { header: "Remarks", value: (d) => d.remarks ?? "" },
   ]
 

@@ -20,6 +20,7 @@ export const dispatchSchema = z
     truck_type: z.enum(["company", "rented"]),
     owner_details: z.string().optional(),
     rent_amount: z.number().min(0, "Must be 0 or more"),
+    fuel_station: z.string().optional(),
     status: z.enum(["pending", "in_transit", "completed", "cancelled"]),
     branch_id: z.string().optional(),
   })
