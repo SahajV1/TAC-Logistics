@@ -9,8 +9,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { ExportButton, type ExportColumn } from "@/components/export-button"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
 import { formatCurrency, formatMonth } from "@/lib/format"
-import type { Branch, Salary } from "@/lib/types"
+import type { Branch, PersonType, Salary } from "@/lib/types"
 import {
   SalaryFormDialog,
   type DriverPick,
@@ -99,6 +105,11 @@ export function SalaryTable({
       cell: ({ row }) => formatCurrency(Number(row.original.deductions)),
     },
     {
+      accessorKey: "advance",
+      header: "Advance",
+      cell: ({ row }) => formatCurrency(Number(row.original.advance)),
+    },
+    {
       accessorKey: "net_salary",
       header: "Net",
       cell: ({ row }) => (
@@ -166,6 +177,7 @@ export function SalaryTable({
     { header: "Base", value: (s) => Number(s.base_salary) },
     { header: "Bonus", value: (s) => Number(s.bonus) },
     { header: "Deductions", value: (s) => Number(s.deductions) },
+    { header: "Advance", value: (s) => Number(s.advance) },
     { header: "Net", value: (s) => Number(s.net_salary) },
     { header: "Paid", value: (s) => (s.paid ? "Yes" : "No") },
     { header: "Paid Date", value: (s) => s.paid_date ?? "" },
@@ -173,21 +185,26 @@ export function SalaryTable({
     { header: "Notes", value: (s) => s.notes ?? "" },
   ]
 
-  return (
+  // Split records so Drivers and Staff salaries can be viewed separately.
+  const driverSalaries = salaries.filter((s) => s.person_type === "driver")
+  const staffSalaries = salaries.filter((s) => s.person_type === "staff")
+
+  const renderTable = (
+    rows: Salary[],
+    filename: string,
+    defaultPersonType?: PersonType
+  ) => (
     <DataTable
       columns={columns}
-      data={salaries}
+      data={rows}
       searchPlaceholder="Search person, month…"
       emptyMessage="No salary records yet."
       toolbar={
         <>
-          <ExportButton
-            rows={salaries}
-            columns={exportColumns}
-            filename="salaries"
-          />
+          <ExportButton rows={rows} columns={exportColumns} filename={filename} />
           <SalaryFormDialog
             {...lookups}
+            defaultPersonType={defaultPersonType}
             trigger={
               <Button>
                 <Plus /> Record salary
@@ -197,5 +214,24 @@ export function SalaryTable({
         </>
       }
     />
+  )
+
+  return (
+    <Tabs defaultValue="all">
+      <TabsList>
+        <TabsTrigger value="all">All ({salaries.length})</TabsTrigger>
+        <TabsTrigger value="driver">
+          Drivers ({driverSalaries.length})
+        </TabsTrigger>
+        <TabsTrigger value="staff">Staff ({staffSalaries.length})</TabsTrigger>
+      </TabsList>
+      <TabsContent value="all">{renderTable(salaries, "salaries")}</TabsContent>
+      <TabsContent value="driver">
+        {renderTable(driverSalaries, "salaries-drivers", "driver")}
+      </TabsContent>
+      <TabsContent value="staff">
+        {renderTable(staffSalaries, "salaries-staff", "staff")}
+      </TabsContent>
+    </Tabs>
   )
 }

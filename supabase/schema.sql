@@ -102,6 +102,7 @@ create table if not exists public.dispatches (
   fuel_cost       numeric(12,2) not null default 0,
   advance_amount  numeric(12,2) not null default 0,
   misc_amount     numeric(12,2) not null default 0,
+  toll_amount     numeric(12,2) not null default 0,
   remarks         text,
   truck_type      text not null default 'company' check (truck_type in ('company','rented')),
   owner_details   text,           -- rented trucks
@@ -125,7 +126,8 @@ create table if not exists public.salaries (
   base_salary   numeric(12,2) not null default 0,
   bonus         numeric(12,2) not null default 0,
   deductions    numeric(12,2) not null default 0,
-  net_salary    numeric(12,2) generated always as (base_salary + bonus - deductions) stored,
+  advance       numeric(12,2) not null default 0,    -- advance already paid out; reduces net
+  net_salary    numeric(12,2) generated always as (base_salary + bonus - deductions - advance) stored,
   paid          boolean not null default false,
   paid_date     date,
   notes         text,
