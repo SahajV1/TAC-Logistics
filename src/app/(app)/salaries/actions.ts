@@ -33,6 +33,7 @@ export async function saveSalary(
     base_salary: v.base_salary,
     bonus: v.bonus,
     deductions: v.deductions,
+    advance: v.advance,
     paid: v.paid,
     paid_date: v.paid ? v.paid_date || null : null,
     notes: v.notes || null,

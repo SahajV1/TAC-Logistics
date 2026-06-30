@@ -54,7 +54,7 @@ export default async function DispatchPage() {
     <>
       <PageHeader
         title="Truck Dispatch"
-        description="Record trips with fuel, advance, rent and miscellaneous costs."
+        description="Record trips with fuel, advance, toll, rent and miscellaneous costs."
       />
       <DispatchTable
         dispatches={(dispatchRes.data ?? []) as Dispatch[]}

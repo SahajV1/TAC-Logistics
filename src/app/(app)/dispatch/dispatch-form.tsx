@@ -75,6 +75,7 @@ function toDefaults(
       fuel_cost: Number(initial.fuel_cost),
       advance_amount: Number(initial.advance_amount),
       misc_amount: Number(initial.misc_amount),
+      toll_amount: Number(initial.toll_amount),
       remarks: initial.remarks ?? "",
       truck_type: initial.truck_type,
       owner_details: initial.owner_details ?? "",
@@ -96,6 +97,7 @@ function toDefaults(
     fuel_cost: 0,
     advance_amount: 0,
     misc_amount: 0,
+    toll_amount: 0,
     remarks: "",
     truck_type: "company",
     owner_details: "",
@@ -281,7 +283,7 @@ export function DispatchFormDialog({
             {initial ? "Edit dispatch" : "New truck dispatch"}
           </DialogTitle>
           <DialogDescription>
-            Record a trip with fuel, advance and miscellaneous costs.
+            Record a trip with fuel, advance, toll and miscellaneous costs.
           </DialogDescription>
         </DialogHeader>
 
@@ -375,25 +377,35 @@ export function DispatchFormDialog({
             />
 
             {truckType === "rented" ? (
-              <div className="bg-muted/40 grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
-                <TextField
-                  control={form.control}
-                  name="owner_details"
-                  label="Owner details"
-                  placeholder="Owner name · phone"
-                  className="sm:col-span-2"
-                />
-                <NumberField
-                  control={form.control}
-                  name="rent_amount"
-                  label="Rent amount (₹)"
-                />
+              <div className="bg-muted/40 space-y-4 rounded-lg border p-4">
+                <div>
+                  <h3 className="text-sm font-semibold">
+                    Rented vehicle details
+                  </h3>
+                  <p className="text-muted-foreground text-xs">
+                    Owner and rent information for this hired truck.
+                  </p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <TextField
+                    control={form.control}
+                    name="owner_details"
+                    label="Owner details"
+                    placeholder="Owner name · phone"
+                    className="sm:col-span-2"
+                  />
+                  <NumberField
+                    control={form.control}
+                    name="rent_amount"
+                    label="Rent amount (₹)"
+                  />
+                </div>
               </div>
             ) : null}
 
             <FuelStationField control={form.control} stations={fuelStations} />
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <NumberField
                 control={form.control}
                 name="fuel_litres"
@@ -408,6 +420,11 @@ export function DispatchFormDialog({
                 control={form.control}
                 name="advance_amount"
                 label="Advance (₹)"
+              />
+              <NumberField
+                control={form.control}
+                name="toll_amount"
+                label="Toll (₹)"
               />
               <NumberField
                 control={form.control}
