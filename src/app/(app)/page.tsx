@@ -168,6 +168,7 @@ export default async function DashboardPage() {
                 Number(d.fuel_cost) +
                 Number(d.advance_amount) +
                 Number(d.misc_amount) +
+                Number(d.toll_amount) +
                 Number(d.rent_amount)
             )
           )}

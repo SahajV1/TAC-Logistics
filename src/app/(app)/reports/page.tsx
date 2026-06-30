@@ -25,13 +25,28 @@ export default async function ReportsPage() {
     const month = d.dispatch_date.slice(0, 7)
     const row =
       monthMap.get(month) ??
-      ({ month, trips: 0, fuel: 0, rent: 0, advance: 0, misc: 0, total: 0 } as MonthRow)
+      ({
+        month,
+        trips: 0,
+        fuel: 0,
+        rent: 0,
+        advance: 0,
+        toll: 0,
+        misc: 0,
+        total: 0,
+      } as MonthRow)
     row.trips += 1
     row.fuel += n(d.fuel_cost)
     row.rent += n(d.rent_amount)
     row.advance += n(d.advance_amount)
+    row.toll += n(d.toll_amount)
     row.misc += n(d.misc_amount)
-    row.total += n(d.fuel_cost) + n(d.rent_amount) + n(d.advance_amount) + n(d.misc_amount)
+    row.total +=
+      n(d.fuel_cost) +
+      n(d.rent_amount) +
+      n(d.advance_amount) +
+      n(d.toll_amount) +
+      n(d.misc_amount)
     monthMap.set(month, row)
   }
   const monthly = [...monthMap.values()].sort((a, b) =>
@@ -48,7 +63,12 @@ export default async function ReportsPage() {
     row.trips += 1
     row.fuel += n(d.fuel_cost)
     row.rent += n(d.rent_amount)
-    row.total += n(d.fuel_cost) + n(d.rent_amount) + n(d.advance_amount) + n(d.misc_amount)
+    row.total +=
+      n(d.fuel_cost) +
+      n(d.rent_amount) +
+      n(d.advance_amount) +
+      n(d.toll_amount) +
+      n(d.misc_amount)
     branchMap.set(branch, row)
   }
   const branchly = [...branchMap.values()].sort((a, b) => b.total - a.total)

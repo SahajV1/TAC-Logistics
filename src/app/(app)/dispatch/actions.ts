@@ -55,6 +55,7 @@ export async function saveDispatch(
     fuel_cost: v.fuel_cost,
     advance_amount: v.advance_amount,
     misc_amount: v.misc_amount,
+    toll_amount: v.toll_amount,
     remarks: v.remarks || null,
     truck_type: v.truck_type,
     owner_details: v.truck_type === "rented" ? v.owner_details || null : null,

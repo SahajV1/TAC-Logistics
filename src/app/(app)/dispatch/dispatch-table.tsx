@@ -33,6 +33,7 @@ function tripCost(d: Dispatch) {
     Number(d.fuel_cost) +
     Number(d.advance_amount) +
     Number(d.misc_amount) +
+    Number(d.toll_amount) +
     Number(d.rent_amount)
   )
 }
@@ -184,6 +185,7 @@ export function DispatchTable({
     { header: "Fuel Cost", value: (d) => Number(d.fuel_cost) },
     { header: "Fuel Station", value: (d) => d.fuel_station ?? "" },
     { header: "Advance", value: (d) => Number(d.advance_amount) },
+    { header: "Toll", value: (d) => Number(d.toll_amount) },
     { header: "Misc", value: (d) => Number(d.misc_amount) },
     { header: "Rent", value: (d) => Number(d.rent_amount) },
     { header: "Trip Cost", value: (d) => tripCost(d) },

@@ -26,7 +26,7 @@ import {
   TextField,
   TextareaField,
 } from "@/components/form-fields"
-import type { Branch, Salary } from "@/lib/types"
+import type { Branch, PersonType, Salary } from "@/lib/types"
 
 export type DriverPick = { id: string; name: string; branch_id: string }
 export type StaffPick = { id: string; full_name: string; branch_id: string | null }
@@ -37,10 +37,11 @@ function thisMonth() {
 
 function toDefaults(
   initial: Salary | null,
-  defaultBranchId: string | null
+  defaultBranchId: string | null,
+  defaultPersonType: PersonType = "driver"
 ): SalaryFormValues {
   return {
-    person_type: initial?.person_type ?? "driver",
+    person_type: initial?.person_type ?? defaultPersonType,
     driver_id: initial?.driver_id ?? "",
     staff_id: initial?.staff_id ?? "",
     person_name: initial?.person_name ?? "",
@@ -48,6 +49,7 @@ function toDefaults(
     base_salary: Number(initial?.base_salary ?? 0),
     bonus: Number(initial?.bonus ?? 0),
     deductions: Number(initial?.deductions ?? 0),
+    advance: Number(initial?.advance ?? 0),
     paid: initial?.paid ?? false,
     paid_date: initial?.paid_date ?? "",
     notes: initial?.notes ?? "",
@@ -63,6 +65,7 @@ export function SalaryFormDialog({
   branches,
   isAdmin,
   defaultBranchId,
+  defaultPersonType,
 }: {
   trigger: React.ReactNode
   initial?: Salary | null
@@ -71,6 +74,7 @@ export function SalaryFormDialog({
   branches: Pick<Branch, "id" | "name">[]
   isAdmin: boolean
   defaultBranchId: string | null
+  defaultPersonType?: PersonType
 }) {
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
@@ -78,11 +82,11 @@ export function SalaryFormDialog({
 
   const form = useForm<SalaryFormValues>({
     resolver: zodResolver(salarySchema),
-    defaultValues: toDefaults(initial, defaultBranchId),
+    defaultValues: toDefaults(initial, defaultBranchId, defaultPersonType),
   })
 
   React.useEffect(() => {
-    if (open) form.reset(toDefaults(initial, defaultBranchId))
+    if (open) form.reset(toDefaults(initial, defaultBranchId, defaultPersonType))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
@@ -120,7 +124,7 @@ export function SalaryFormDialog({
             {initial ? "Edit salary" : "Record salary"}
           </DialogTitle>
           <DialogDescription>
-            Net salary is calculated as base + bonus − deductions.
+            Net salary is calculated as base + bonus − deductions − advance.
           </DialogDescription>
         </DialogHeader>
 
@@ -194,7 +198,7 @@ export function SalaryFormDialog({
               />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <NumberField
                 control={form.control}
                 name="base_salary"
@@ -209,6 +213,11 @@ export function SalaryFormDialog({
                 control={form.control}
                 name="deductions"
                 label="Deductions (₹)"
+              />
+              <NumberField
+                control={form.control}
+                name="advance"
+                label="Advance (₹)"
               />
             </div>
 
