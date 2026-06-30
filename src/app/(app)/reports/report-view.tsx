@@ -20,6 +20,7 @@ export type MonthRow = {
   fuel: number
   rent: number
   advance: number
+  toll: number
   misc: number
   total: number
 }
@@ -66,6 +67,11 @@ export function ReportView({
       cell: ({ row }) => formatCurrency(row.original.advance),
     },
     {
+      accessorKey: "toll",
+      header: "Toll",
+      cell: ({ row }) => formatCurrency(row.original.toll),
+    },
+    {
       accessorKey: "misc",
       header: "Misc",
       cell: ({ row }) => formatCurrency(row.original.misc),
@@ -85,6 +91,7 @@ export function ReportView({
     { header: "Fuel", value: (m) => m.fuel },
     { header: "Rent", value: (m) => m.rent },
     { header: "Advance", value: (m) => m.advance },
+    { header: "Toll", value: (m) => m.toll },
     { header: "Misc", value: (m) => m.misc },
     { header: "Total", value: (m) => m.total },
   ]

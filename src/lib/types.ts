@@ -96,6 +96,7 @@ export interface Dispatch {
   fuel_cost: number
   advance_amount: number
   misc_amount: number
+  toll_amount: number
   remarks: string | null
   truck_type: TruckType
   owner_details: string | null
@@ -121,6 +122,7 @@ export interface Salary {
   base_salary: number
   bonus: number
   deductions: number
+  advance: number
   net_salary: number
   paid: boolean
   paid_date: string | null
