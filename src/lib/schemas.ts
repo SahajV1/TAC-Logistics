@@ -89,6 +89,38 @@ export const fuelStationSchema = z.object({
   status: z.enum(["active", "inactive"]),
 })
 
+export const dealerSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  notes: z.string().optional(),
+  status: z.enum(["active", "inactive"]),
+})
+
+export const dealerTransactionSchema = z
+  .object({
+    dealer_id: z.string().min(1, "Select a dealer"),
+    txn_type: z.enum(["due", "fuel_offset", "payment"]),
+    txn_date: z.string().min(1, "Date is required"),
+    amount: z.number().gt(0, "Amount must be more than 0"),
+    fuel_station: z.string().optional(),
+    fuel_litres: z.number().min(0, "Must be 0 or more"),
+    reference: z.string().optional(),
+    notes: z.string().optional(),
+  })
+  .refine((d) => d.txn_type !== "fuel_offset" || !!d.fuel_station?.trim(), {
+    message: "Select the fuel station",
+    path: ["fuel_station"],
+  })
+
+export const pumpPaymentSchema = z.object({
+  fuel_station: z.string().min(1, "Select the fuel station"),
+  pay_date: z.string().min(1, "Date is required"),
+  amount: z.number().gt(0, "Amount must be more than 0"),
+  reference: z.string().optional(),
+  notes: z.string().optional(),
+})
+
 export const userSchema = z.object({
   full_name: z.string().trim().min(1, "Name is required"),
   email: z.email("Enter a valid email"),
@@ -108,4 +140,9 @@ export type TruckFormValues = z.infer<typeof truckSchema>
 export type DocumentFormValues = z.infer<typeof documentSchema>
 export type SalaryFormValues = z.infer<typeof salarySchema>
 export type FuelStationFormValues = z.infer<typeof fuelStationSchema>
+export type DealerFormValues = z.infer<typeof dealerSchema>
+export type DealerTransactionFormValues = z.infer<
+  typeof dealerTransactionSchema
+>
+export type PumpPaymentFormValues = z.infer<typeof pumpPaymentSchema>
 export type UserFormValues = z.infer<typeof userSchema>

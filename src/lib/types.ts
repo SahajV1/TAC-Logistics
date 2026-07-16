@@ -133,12 +133,54 @@ export interface Salary {
   branches?: Pick<Branch, "id" | "name"> | null
 }
 
+export type DealerTxnType = "due" | "fuel_offset" | "payment"
+
+export interface Dealer {
+  id: string
+  name: string
+  phone: string | null
+  address: string | null
+  notes: string | null
+  status: EntityStatus
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface DealerTransaction {
+  id: string
+  dealer_id: string
+  txn_date: string
+  txn_type: DealerTxnType
+  amount: number
+  fuel_station: string | null
+  fuel_litres: number | null
+  reference: string | null
+  notes: string | null
+  created_by: string | null
+  created_at: string
+  updated_at: string
+  dealers?: Pick<Dealer, "id" | "name"> | null
+}
+
 export interface FuelStation {
   id: string
   name: string
   location: string | null
   contact: string | null
   status: EntityStatus
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface FuelStationPayment {
+  id: string
+  fuel_station: string
+  pay_date: string
+  amount: number
+  reference: string | null
+  notes: string | null
   created_by: string | null
   created_at: string
   updated_at: string

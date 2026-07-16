@@ -1,4 +1,5 @@
 import type {
+  DealerTxnType,
   DispatchStatus,
   DocType,
   EntityStatus,
@@ -45,6 +46,20 @@ export const DISPATCH_STATUS_LABELS: Record<DispatchStatus, string> =
     DISPATCH_STATUSES.map((s) => [s.value, s.label])
   ) as Record<DispatchStatus, string>
 
+// Form select options — spelled out so the money direction is unmistakable.
+export const DEALER_TXN_TYPES: { value: DealerTxnType; label: string }[] = [
+  { value: "due", label: "Due — money we have to give (rent etc.)" },
+  { value: "fuel_offset", label: "Fuel taken by dealer at our pump (reduces due)" },
+  { value: "payment", label: "Cash / bank paid to dealer (reduces due)" },
+]
+
+// Short labels for table badges and Excel exports.
+export const DEALER_TXN_TYPE_LABELS: Record<DealerTxnType, string> = {
+  due: "Due added",
+  fuel_offset: "Fuel offset",
+  payment: "Cash paid",
+}
+
 // Days-before-expiry thresholds that trigger alerts / emails.
 export const EXPIRY_THRESHOLDS = [30, 15, 7, 1] as const
 
@@ -59,8 +74,9 @@ export type NavItem = {
   staffVisible?: boolean // visible to non-admin staff (admins see everything)
 }
 
-// Non-admin staff only see Dispatch, Trucks and Documents. Everything else is
-// admin-only (enforced both here and by requireAdmin() on each page/action).
+// Non-admin staff see Dispatch, Trucks, Documents, Dealer Ledger and Petrol
+// Pumps. Everything else is admin-only (enforced both here and by
+// requireAdmin() on each page/action).
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/dispatch", label: "Dispatch", icon: "Truck", staffVisible: true },
@@ -69,6 +85,8 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/documents", label: "Documents", icon: "FileText", staffVisible: true },
   { href: "/alerts", label: "Alerts", icon: "BellRing" },
   { href: "/salaries", label: "Salaries", icon: "Wallet" },
+  { href: "/dealers", label: "Dealer Ledger", icon: "Handshake", staffVisible: true },
+  { href: "/pumps", label: "Petrol Pumps", icon: "Fuel", staffVisible: true },
   { href: "/reports", label: "Reports", icon: "BarChart3" },
   { href: "/users", label: "Staff", icon: "ShieldCheck", adminOnly: true },
   { href: "/audit", label: "Audit Log", icon: "ScrollText", adminOnly: true },

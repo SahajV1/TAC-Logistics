@@ -36,7 +36,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="bg-muted/30 min-h-full">
+      {/* suppressHydrationWarning: browser extensions (e.g. Grammarly) inject
+          attributes into <body> before React hydrates */}
+      <body className="bg-muted/30 min-h-full" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
