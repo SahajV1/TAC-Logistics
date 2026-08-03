@@ -13,6 +13,7 @@ import type { Dispatch, DispatchStatus } from "@/lib/types"
 import {
   DispatchFormDialog,
   type BranchOption,
+  type DealerOption,
   type DriverOption,
   type TruckOption,
 } from "./dispatch-form"
@@ -44,6 +45,7 @@ export function DispatchTable({
   trucks,
   branches,
   fuelStations,
+  dealers,
   isAdmin,
   defaultBranchId,
 }: {
@@ -52,10 +54,19 @@ export function DispatchTable({
   trucks: TruckOption[]
   branches: BranchOption[]
   fuelStations: string[]
+  dealers: DealerOption[]
   isAdmin: boolean
   defaultBranchId: string | null
 }) {
-  const lookups = { drivers, trucks, branches, fuelStations, isAdmin, defaultBranchId }
+  const lookups = {
+    drivers,
+    trucks,
+    branches,
+    fuelStations,
+    dealers,
+    isAdmin,
+    defaultBranchId,
+  }
 
   const columns: ColumnDef<Dispatch>[] = [
     {
@@ -87,6 +98,15 @@ export function DispatchTable({
           {row.original.truck_type === "rented" ? "Rented" : "Company"}
         </Badge>
       ),
+    },
+    {
+      id: "dealer",
+      header: "Dealer",
+      accessorFn: (r) => r.dealers?.name ?? "",
+      cell: ({ row }) =>
+        row.original.dealers?.name ?? (
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     {
       accessorKey: "fuel_cost",
@@ -189,6 +209,7 @@ export function DispatchTable({
     { header: "Misc", value: (d) => Number(d.misc_amount) },
     { header: "Rent", value: (d) => Number(d.rent_amount) },
     { header: "Trip Cost", value: (d) => tripCost(d) },
+    { header: "Dealer", value: (d) => d.dealers?.name ?? "" },
     { header: "Owner Details", value: (d) => d.owner_details ?? "" },
     { header: "Status", value: (d) => DISPATCH_STATUS_LABELS[d.status] },
     { header: "Branch", value: (d) => d.branches?.name ?? "" },

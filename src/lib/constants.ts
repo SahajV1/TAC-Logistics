@@ -86,6 +86,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/alerts", label: "Alerts", icon: "BellRing" },
   { href: "/salaries", label: "Salaries", icon: "Wallet" },
   { href: "/dealers", label: "Dealer Ledger", icon: "Handshake", staffVisible: true },
+  { href: "/rented-vehicles", label: "Rented Vehicles", icon: "KeySquare", staffVisible: true },
   { href: "/pumps", label: "Petrol Pumps", icon: "Fuel", staffVisible: true },
   { href: "/reports", label: "Reports", icon: "BarChart3" },
   { href: "/users", label: "Staff", icon: "ShieldCheck", adminOnly: true },

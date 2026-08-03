@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useForm, type Control } from "react-hook-form"
+import { useForm, useController, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
@@ -53,6 +53,7 @@ export type TruckOption = {
   branch_id: string
 }
 export type BranchOption = { id: string; name: string }
+export type DealerOption = { id: string; name: string }
 
 function today() {
   return new Date().toISOString().slice(0, 10)
@@ -80,6 +81,8 @@ function toDefaults(
       truck_type: initial.truck_type,
       owner_details: initial.owner_details ?? "",
       rent_amount: Number(initial.rent_amount),
+      dealer_id: initial.dealer_id ?? "",
+      new_dealer_name: "",
       fuel_station: initial.fuel_station ?? "",
       status: initial.status,
       branch_id: initial.branch_id,
@@ -102,6 +105,8 @@ function toDefaults(
     truck_type: "company",
     owner_details: "",
     rent_amount: 0,
+    dealer_id: "",
+    new_dealer_name: "",
     fuel_station: "",
     status: "completed",
     branch_id: defaultBranchId ?? "",
@@ -195,6 +200,89 @@ function FuelStationField({
   )
 }
 
+const NEW_DEALER = "__new__"
+
+// Dropdown of dealers with an inline "add new" mode, mirroring
+// FuelStationField above. Unlike fuel_station (plain text), the dealer is a
+// foreign key — a typed-in name is created as a new dealer row on submit
+// (see resolveDealerId in actions.ts) and its id fills dealer_id.
+function DealerField({
+  control,
+  dealers,
+}: {
+  control: Control<DispatchFormValues>
+  dealers: DealerOption[]
+}) {
+  const [adding, setAdding] = React.useState(false)
+  const dealerField = useController({ control, name: "dealer_id" })
+  const nameField = useController({ control, name: "new_dealer_name" })
+
+  const dealerValue = (dealerField.field.value as string | undefined) ?? ""
+  const nameValue = (nameField.field.value as string | undefined) ?? ""
+  // Keep an existing dealer visible even if it's since gone inactive.
+  const options = dealers.map((d) => ({ value: d.id, label: d.name }))
+
+  return (
+    <FormItem>
+      <FormLabel>Rented from (dealer)</FormLabel>
+      {adding ? (
+        <div className="flex gap-2">
+          <FormControl>
+            <Input
+              autoFocus
+              placeholder="New dealer name"
+              value={nameValue}
+              onChange={(e) => nameField.field.onChange(e.target.value)}
+              onBlur={nameField.field.onBlur}
+            />
+          </FormControl>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              nameField.field.onChange("")
+              setAdding(false)
+            }}
+          >
+            Pick from list
+          </Button>
+        </div>
+      ) : (
+        <Select
+          value={dealerValue}
+          onValueChange={(v) => {
+            if (v === NEW_DEALER) {
+              dealerField.field.onChange("")
+              setAdding(true)
+            } else {
+              dealerField.field.onChange(v)
+            }
+          }}
+        >
+          <FormControl>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select the dealer" />
+            </SelectTrigger>
+          </FormControl>
+          <SelectContent>
+            {options.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+            <SelectItem value={NEW_DEALER}>➕ Add new dealer…</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+      {dealerField.fieldState.error ? (
+        <p className="text-destructive text-sm">
+          {dealerField.fieldState.error.message}
+        </p>
+      ) : null}
+    </FormItem>
+  )
+}
+
 export function DispatchFormDialog({
   trigger,
   initial = null,
@@ -202,6 +290,7 @@ export function DispatchFormDialog({
   trucks,
   branches,
   fuelStations,
+  dealers,
   isAdmin,
   defaultBranchId,
 }: {
@@ -211,6 +300,7 @@ export function DispatchFormDialog({
   trucks: TruckOption[]
   branches: BranchOption[]
   fuelStations: string[]
+  dealers: DealerOption[]
   isAdmin: boolean
   defaultBranchId: string | null
 }) {
@@ -386,6 +476,7 @@ export function DispatchFormDialog({
                     Owner and rent information for this hired truck.
                   </p>
                 </div>
+                <DealerField control={form.control} dealers={dealers} />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <TextField
                     control={form.control}

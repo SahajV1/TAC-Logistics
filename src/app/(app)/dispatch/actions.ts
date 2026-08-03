@@ -25,6 +25,35 @@ async function rememberFuelStation(name: string, createdBy: string) {
   }
 }
 
+// Resolve the dealer this rented truck is from: use the picked dealer's id,
+// or — if the user typed a new dealer name inline — reuse an existing dealer
+// of that name or create one. Any authenticated user may create dealers (see
+// the dealers_all RLS policy), so this runs on the regular client.
+async function resolveDealerId(
+  dealerId: string | undefined,
+  newDealerName: string | undefined,
+  userId: string
+): Promise<string | null> {
+  if (dealerId) return dealerId
+  const name = newDealerName?.trim()
+  if (!name) return null
+
+  const supabase = await createClient()
+  const { data: existing } = await supabase
+    .from("dealers")
+    .select("id")
+    .eq("name", name)
+    .maybeSingle()
+  if (existing) return existing.id
+
+  const { data: created } = await supabase
+    .from("dealers")
+    .insert({ name, created_by: userId })
+    .select("id")
+    .single()
+  return created?.id ?? null
+}
+
 export async function saveDispatch(
   id: string | null,
   values: unknown
@@ -41,6 +70,14 @@ export async function saveDispatch(
 
   const fuel_station = v.fuel_station?.trim() || null
   if (fuel_station) await rememberFuelStation(fuel_station, user.id)
+
+  const dealer_id =
+    v.truck_type === "rented"
+      ? await resolveDealerId(v.dealer_id, v.new_dealer_name, user.id)
+      : null
+  if (v.truck_type === "rented" && !dealer_id) {
+    return { error: "Select or add the dealer this truck is rented from" }
+  }
 
   const payload = {
     branch_id,
@@ -60,6 +97,7 @@ export async function saveDispatch(
     truck_type: v.truck_type,
     owner_details: v.truck_type === "rented" ? v.owner_details || null : null,
     rent_amount: v.truck_type === "rented" ? v.rent_amount : 0,
+    dealer_id,
     fuel_station,
     status: v.status,
   }
@@ -80,6 +118,7 @@ export async function saveDispatch(
   }
 
   revalidatePath("/dispatch")
+  revalidatePath("/rented-vehicles")
   revalidatePath("/")
   return {}
 }
@@ -90,6 +129,7 @@ export async function deleteDispatch(id: string): Promise<Result> {
   const { error } = await supabase.from("dispatches").delete().eq("id", id)
   if (error) return { error: error.message }
   revalidatePath("/dispatch")
+  revalidatePath("/rented-vehicles")
   revalidatePath("/")
   return {}
 }

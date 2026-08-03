@@ -504,6 +504,13 @@ drop policy if exists dealer_txns_all on public.dealer_transactions;
 create policy dealer_txns_all on public.dealer_transactions for all to authenticated
   using (true) with check (true);
 
+-- Link rented dispatches to a dealer, so we can total up how many trucks and
+-- how much rent cost came from each dealer (powers the "Rented Vehicles" page).
+alter table public.dispatches
+  add column if not exists dealer_id uuid references public.dealers(id) on delete set null;
+
+create index if not exists idx_dispatches_dealer_id on public.dispatches(dealer_id);
+
 -- ============================================================================
 -- PETROL PUMP LEDGER (what we owe each affiliated fuel station)
 -- Outstanding to a pump = dispatch fuel + dealer fuel offsets − payments.

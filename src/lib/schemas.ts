@@ -21,6 +21,8 @@ export const dispatchSchema = z
     truck_type: z.enum(["company", "rented"]),
     owner_details: z.string().optional(),
     rent_amount: z.number().min(0, "Must be 0 or more"),
+    dealer_id: z.string().optional(),
+    new_dealer_name: z.string().optional(),
     fuel_station: z.string().optional(),
     status: z.enum(["pending", "in_transit", "completed", "cancelled"]),
     branch_id: z.string().optional(),
@@ -29,6 +31,15 @@ export const dispatchSchema = z
     message: "Owner details are required for rented trucks",
     path: ["owner_details"],
   })
+  .refine(
+    (d) =>
+      d.truck_type !== "rented" ||
+      !!(d.dealer_id?.trim() || d.new_dealer_name?.trim()),
+    {
+      message: "Select or add the dealer this truck is rented from",
+      path: ["dealer_id"],
+    }
+  )
 
 export const driverSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),

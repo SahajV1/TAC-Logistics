@@ -101,6 +101,7 @@ export interface Dispatch {
   truck_type: TruckType
   owner_details: string | null
   rent_amount: number
+  dealer_id: string | null
   fuel_station: string | null
   status: DispatchStatus
   created_by: string | null
@@ -109,6 +110,8 @@ export interface Dispatch {
   branches?: Pick<Branch, "id" | "name"> | null
   // joined creator (visible to admins; staff only see their own profile via RLS)
   creator?: Pick<Profile, "id" | "full_name"> | null
+  // joined dealer for rented trucks
+  dealers?: Pick<Dealer, "id" | "name"> | null
 }
 
 export interface Salary {

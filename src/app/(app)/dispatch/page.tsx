@@ -5,6 +5,7 @@ import { DispatchTable } from "./dispatch-table"
 import type { Dispatch } from "@/lib/types"
 import type {
   BranchOption,
+  DealerOption,
   DriverOption,
   TruckOption,
 } from "./dispatch-form"
@@ -15,12 +16,12 @@ export default async function DispatchPage() {
   const user = await requireUser()
   const supabase = await createClient()
 
-  const [dispatchRes, driverRes, truckRes, branchRes, stationRes] =
+  const [dispatchRes, driverRes, truckRes, branchRes, stationRes, dealerRes] =
     await Promise.all([
       supabase
         .from("dispatches")
         .select(
-          "*, branches(id, name), creator:profiles!created_by(id, full_name)"
+          "*, branches(id, name), creator:profiles!created_by(id, full_name), dealers(id, name)"
         )
         .order("dispatch_date", { ascending: false })
         .order("created_at", { ascending: false }),
@@ -44,6 +45,11 @@ export default async function DispatchPage() {
         .select("name")
         .eq("status", "active")
         .order("name"),
+      supabase
+        .from("dealers")
+        .select("id, name")
+        .eq("status", "active")
+        .order("name"),
     ])
 
   const fuelStations = ((stationRes.data ?? []) as { name: string }[]).map(
@@ -62,6 +68,7 @@ export default async function DispatchPage() {
         trucks={(truckRes.data ?? []) as TruckOption[]}
         branches={(branchRes.data ?? []) as BranchOption[]}
         fuelStations={fuelStations}
+        dealers={(dealerRes.data ?? []) as DealerOption[]}
         isAdmin={user.isAdmin}
         defaultBranchId={user.branch_id}
       />
