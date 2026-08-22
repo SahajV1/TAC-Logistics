@@ -75,7 +75,8 @@ export function NumberField<T extends FieldValues>({
   placeholder,
   step,
   className,
-}: Base<T> & { step?: string }) {
+  disabled,
+}: Base<T> & { step?: string; disabled?: boolean }) {
   return (
     <FormField
       control={control}
@@ -90,6 +91,7 @@ export function NumberField<T extends FieldValues>({
               step={step ?? "any"}
               min={0}
               placeholder={placeholder}
+              disabled={disabled}
               name={field.name}
               ref={field.ref}
               onBlur={field.onBlur}

@@ -9,6 +9,9 @@ import type {
 export const APP_NAME = "TAC Logistics"
 export const APP_FULL_NAME = "TAC Logistics"
 
+// Fixed id of the singleton app_settings row (see supabase/app_settings.sql).
+export const APP_SETTINGS_ID = "00000000-0000-0000-0000-000000000001"
+
 export const DOC_TYPES: { value: DocType; label: string }[] = [
   { value: "rc", label: "Registration (RC)" },
   { value: "insurance", label: "Insurance" },

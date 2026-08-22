@@ -21,6 +21,9 @@ export const dispatchSchema = z
     truck_type: z.enum(["company", "rented"]),
     owner_details: z.string().optional(),
     rent_amount: z.number().min(0, "Must be 0 or more"),
+    rented_advance_amount: z.number().min(0, "Must be 0 or more"),
+    rented_fuel_litres: z.number().min(0, "Must be 0 or more"),
+    rented_fuel_station: z.string().optional(),
     dealer_id: z.string().optional(),
     new_dealer_name: z.string().optional(),
     fuel_station: z.string().optional(),
@@ -38,6 +41,16 @@ export const dispatchSchema = z
     {
       message: "Select or add the dealer this truck is rented from",
       path: ["dealer_id"],
+    }
+  )
+  .refine(
+    (d) =>
+      d.truck_type !== "rented" ||
+      d.rented_fuel_litres <= 0 ||
+      !!d.rented_fuel_station?.trim(),
+    {
+      message: "Select the petrol pump where the dealer took fuel",
+      path: ["rented_fuel_station"],
     }
   )
 
@@ -132,6 +145,10 @@ export const pumpPaymentSchema = z.object({
   notes: z.string().optional(),
 })
 
+export const fuelPriceSchema = z.object({
+  fuel_price_per_litre: z.number().gt(0, "Must be more than 0"),
+})
+
 export const userSchema = z.object({
   full_name: z.string().trim().min(1, "Name is required"),
   email: z.email("Enter a valid email"),
@@ -157,3 +174,4 @@ export type DealerTransactionFormValues = z.infer<
 >
 export type PumpPaymentFormValues = z.infer<typeof pumpPaymentSchema>
 export type UserFormValues = z.infer<typeof userSchema>
+export type FuelPriceFormValues = z.infer<typeof fuelPriceSchema>

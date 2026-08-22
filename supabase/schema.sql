@@ -107,6 +107,10 @@ create table if not exists public.dispatches (
   truck_type      text not null default 'company' check (truck_type in ('company','rented')),
   owner_details   text,           -- rented trucks
   rent_amount     numeric(12,2) not null default 0,
+  rented_advance_amount numeric(12,2) not null default 0,  -- rented: advance given to dealer, offsets rent
+  rented_fuel_litres    numeric(10,2) not null default 0,  -- rented: fuel taken by dealer's driver
+  rented_fuel_cost      numeric(12,2) not null default 0,  -- rented: cost of that fuel, offsets rent
+  rented_fuel_station   text,                              -- rented: pump where that fuel was taken
   fuel_station    text,           -- filling station used (free text; suggestions come from fuel_stations)
   status          text not null default 'completed' check (status in ('pending','in_transit','completed','cancelled')),
   created_by      uuid references public.profiles(id) on delete set null,
@@ -457,6 +461,10 @@ create table if not exists public.dealers (
 create table if not exists public.dealer_transactions (
   id            uuid primary key default gen_random_uuid(),
   dealer_id     uuid not null references public.dealers(id) on delete cascade,
+  dispatch_id   uuid references public.dispatches(id) on delete cascade,
+                -- set when this entry was auto-generated from a rented dispatch
+                -- (advance/fuel taken); the app deletes+recreates these on every
+                -- dispatch save, so cascade delete keeps them in sync on delete.
   txn_date      date not null default current_date,
   txn_type      text not null check (txn_type in ('due','fuel_offset','payment')),
   amount        numeric(12,2) not null check (amount > 0),
@@ -469,8 +477,9 @@ create table if not exists public.dealer_transactions (
   updated_at    timestamptz not null default now()
 );
 
-create index if not exists idx_dealer_txns_dealer on public.dealer_transactions(dealer_id);
-create index if not exists idx_dealer_txns_date   on public.dealer_transactions(txn_date);
+create index if not exists idx_dealer_txns_dealer   on public.dealer_transactions(dealer_id);
+create index if not exists idx_dealer_txns_date     on public.dealer_transactions(txn_date);
+create index if not exists idx_dealer_txns_dispatch on public.dealer_transactions(dispatch_id);
 
 drop trigger if exists trg_dealers_updated on public.dealers;
 create trigger trg_dealers_updated before update on public.dealers
@@ -584,6 +593,41 @@ create policy documents_storage_delete on storage.objects for delete to authenti
     bucket_id = 'documents'
     and (public.is_admin() or (storage.foldername(name))[1] = public.user_branch_id()::text)
   );
+
+-- ============================================================================
+-- APP SETTINGS (singleton row; admin-managed)
+-- Currently holds the fuel price per litre used to auto-calculate fuel cost
+-- on dispatches, so staff only enter litres.
+-- ============================================================================
+create table if not exists public.app_settings (
+  id                    uuid primary key default '00000000-0000-0000-0000-000000000001'::uuid,
+  fuel_price_per_litre  numeric(10,2) not null default 0,
+  updated_by            uuid references public.profiles(id) on delete set null,
+  updated_at            timestamptz not null default now(),
+  constraint app_settings_singleton check (id = '00000000-0000-0000-0000-000000000001'::uuid)
+);
+
+insert into public.app_settings (id) values ('00000000-0000-0000-0000-000000000001')
+on conflict (id) do nothing;
+
+drop trigger if exists trg_app_settings_updated on public.app_settings;
+create trigger trg_app_settings_updated before update on public.app_settings
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_audit_app_settings on public.app_settings;
+create trigger trg_audit_app_settings
+  after insert or update or delete on public.app_settings
+  for each row execute function public.audit_trigger();
+
+alter table public.app_settings enable row level security;
+
+drop policy if exists app_settings_select on public.app_settings;
+create policy app_settings_select on public.app_settings for select to authenticated
+  using (true);
+
+drop policy if exists app_settings_admin_write on public.app_settings;
+create policy app_settings_admin_write on public.app_settings for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
 
 -- ============================================================================
 -- DONE. Next: run the seed script (npm run seed) to create the admin + staff.
