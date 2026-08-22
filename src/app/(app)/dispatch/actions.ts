@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireUser } from "@/lib/auth"
 import { dispatchSchema } from "@/lib/schemas"
+import { APP_SETTINGS_ID } from "@/lib/constants"
 
 type Result = { error?: string }
 
@@ -71,6 +72,26 @@ export async function saveDispatch(
   const fuel_station = v.fuel_station?.trim() || null
   if (fuel_station) await rememberFuelStation(fuel_station, user.id)
 
+  // Fuel cost is never taken from the client — recompute from litres × the
+  // admin-set rate so it can't drift from what the dispatch form showed.
+  const supabase = await createClient()
+  const { data: settings } = await supabase
+    .from("app_settings")
+    .select("fuel_price_per_litre")
+    .eq("id", APP_SETTINGS_ID)
+    .maybeSingle()
+  const rate = Number(settings?.fuel_price_per_litre ?? 0)
+  const fuel_cost = Math.round(v.fuel_litres * rate * 100) / 100
+
+  const rented_fuel_litres = v.truck_type === "rented" ? v.rented_fuel_litres : 0
+  const rented_fuel_cost = Math.round(rented_fuel_litres * rate * 100) / 100
+  const rented_advance_amount =
+    v.truck_type === "rented" ? v.rented_advance_amount : 0
+  const rented_fuel_station =
+    v.truck_type === "rented" && rented_fuel_litres > 0
+      ? v.rented_fuel_station?.trim() || null
+      : null
+
   const dealer_id =
     v.truck_type === "rented"
       ? await resolveDealerId(v.dealer_id, v.new_dealer_name, user.id)
@@ -89,7 +110,7 @@ export async function saveDispatch(
     from_location: v.from_location,
     to_location: v.to_location,
     fuel_litres: v.fuel_litres,
-    fuel_cost: v.fuel_cost,
+    fuel_cost,
     advance_amount: v.advance_amount,
     misc_amount: v.misc_amount,
     toll_amount: v.toll_amount,
@@ -97,13 +118,16 @@ export async function saveDispatch(
     truck_type: v.truck_type,
     owner_details: v.truck_type === "rented" ? v.owner_details || null : null,
     rent_amount: v.truck_type === "rented" ? v.rent_amount : 0,
+    rented_advance_amount,
+    rented_fuel_litres,
+    rented_fuel_cost,
+    rented_fuel_station,
     dealer_id,
     fuel_station,
     status: v.status,
   }
 
-  const supabase = await createClient()
-
+  let dispatchId = id
   if (id) {
     const { error } = await supabase
       .from("dispatches")
@@ -111,14 +135,74 @@ export async function saveDispatch(
       .eq("id", id)
     if (error) return { error: error.message }
   } else {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("dispatches")
       .insert({ ...payload, created_by: user.id })
+      .select("id")
+      .single()
     if (error) return { error: error.message }
+    dispatchId = data.id
+  }
+
+  // Auto-generated ledger entries for this dispatch are always cleared and
+  // rebuilt from the current values, so edits (or switching away from
+  // "rented") never leave stale entries behind.
+  if (dispatchId) {
+    await supabase.from("dealer_transactions").delete().eq("dispatch_id", dispatchId)
+
+    if (dealer_id) {
+      const rows = []
+      if (payload.rent_amount > 0) {
+        rows.push({
+          dealer_id,
+          dispatch_id: dispatchId,
+          txn_date: v.dispatch_date,
+          txn_type: "due" as const,
+          amount: payload.rent_amount,
+          reference: v.vehicle_number,
+          notes: "Auto: rent for this dispatch",
+          created_by: user.id,
+        })
+      }
+      if (rented_advance_amount > 0) {
+        rows.push({
+          dealer_id,
+          dispatch_id: dispatchId,
+          txn_date: v.dispatch_date,
+          txn_type: "payment" as const,
+          amount: rented_advance_amount,
+          reference: v.vehicle_number,
+          notes: "Auto: advance given for this dispatch",
+          created_by: user.id,
+        })
+      }
+      if (rented_fuel_litres > 0 && rented_fuel_cost > 0) {
+        rows.push({
+          dealer_id,
+          dispatch_id: dispatchId,
+          txn_date: v.dispatch_date,
+          txn_type: "fuel_offset" as const,
+          amount: rented_fuel_cost,
+          fuel_station: rented_fuel_station,
+          fuel_litres: rented_fuel_litres,
+          reference: v.vehicle_number,
+          notes: "Auto: fuel taken by dealer's truck",
+          created_by: user.id,
+        })
+      }
+      if (rows.length) {
+        const { error } = await supabase.from("dealer_transactions").insert(rows)
+        if (error)
+          return {
+            error: `Dispatch saved, but dealer ledger update failed: ${error.message}`,
+          }
+      }
+    }
   }
 
   revalidatePath("/dispatch")
   revalidatePath("/rented-vehicles")
+  revalidatePath("/dealers")
   revalidatePath("/")
   return {}
 }
@@ -130,6 +214,7 @@ export async function deleteDispatch(id: string): Promise<Result> {
   if (error) return { error: error.message }
   revalidatePath("/dispatch")
   revalidatePath("/rented-vehicles")
+  revalidatePath("/dealers")
   revalidatePath("/")
   return {}
 }
