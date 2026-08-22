@@ -48,6 +48,7 @@ export function DispatchTable({
   dealers,
   isAdmin,
   defaultBranchId,
+  fuelPricePerLitre,
 }: {
   dispatches: Dispatch[]
   drivers: DriverOption[]
@@ -57,6 +58,7 @@ export function DispatchTable({
   dealers: DealerOption[]
   isAdmin: boolean
   defaultBranchId: string | null
+  fuelPricePerLitre: number
 }) {
   const lookups = {
     drivers,
@@ -66,6 +68,7 @@ export function DispatchTable({
     dealers,
     isAdmin,
     defaultBranchId,
+    fuelPricePerLitre,
   }
 
   const columns: ColumnDef<Dispatch>[] = [
@@ -208,6 +211,10 @@ export function DispatchTable({
     { header: "Toll", value: (d) => Number(d.toll_amount) },
     { header: "Misc", value: (d) => Number(d.misc_amount) },
     { header: "Rent", value: (d) => Number(d.rent_amount) },
+    { header: "Rented Advance", value: (d) => Number(d.rented_advance_amount) },
+    { header: "Rented Fuel Litres", value: (d) => Number(d.rented_fuel_litres) },
+    { header: "Rented Fuel Cost", value: (d) => Number(d.rented_fuel_cost) },
+    { header: "Rented Fuel Station", value: (d) => d.rented_fuel_station ?? "" },
     { header: "Trip Cost", value: (d) => tripCost(d) },
     { header: "Dealer", value: (d) => d.dealers?.name ?? "" },
     { header: "Owner Details", value: (d) => d.owner_details ?? "" },
