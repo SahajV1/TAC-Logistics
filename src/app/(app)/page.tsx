@@ -14,6 +14,7 @@ import { requireUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { PageHeader } from "@/components/page-header"
 import { StatCard } from "@/components/stat-card"
+import { FuelPriceCard } from "./fuel-price-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -33,8 +34,8 @@ import {
 } from "@/components/ui/table"
 import { formatCurrency, formatDate } from "@/lib/format"
 import { expiringWithin } from "@/lib/expiry"
-import { EXPIRY_WINDOW_DAYS } from "@/lib/constants"
-import type { Dispatch, DocumentRow } from "@/lib/types"
+import { APP_SETTINGS_ID, EXPIRY_WINDOW_DAYS } from "@/lib/constants"
+import type { AppSettings, Dispatch, DocumentRow } from "@/lib/types"
 
 export const metadata = { title: "Dashboard" }
 
@@ -49,24 +50,35 @@ export default async function DashboardPage() {
 
   const monthStart = format(startOfMonth(new Date()), "yyyy-MM-dd")
 
-  const [dispatchRes, docRes, driverCount, truckCount] = await Promise.all([
-    supabase
-      .from("dispatches")
-      .select("*, branches(id, name)")
-      .order("dispatch_date", { ascending: false }),
-    supabase
-      .from("documents")
-      .select("*, trucks(id, vehicle_number)")
-      .eq("is_current", true),
-    supabase
-      .from("drivers")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "active"),
-    supabase
-      .from("trucks")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "active"),
-  ])
+  const [dispatchRes, docRes, driverCount, truckCount, settingsRes] =
+    await Promise.all([
+      supabase
+        .from("dispatches")
+        .select("*, branches(id, name)")
+        .order("dispatch_date", { ascending: false }),
+      supabase
+        .from("documents")
+        .select("*, trucks(id, vehicle_number)")
+        .eq("is_current", true),
+      supabase
+        .from("drivers")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active"),
+      supabase
+        .from("trucks")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active"),
+      supabase
+        .from("app_settings")
+        .select("fuel_price_per_litre")
+        .eq("id", APP_SETTINGS_ID)
+        .maybeSingle(),
+    ])
+
+  const fuelPricePerLitre = Number(
+    (settingsRes.data as Pick<AppSettings, "fuel_price_per_litre"> | null)
+      ?.fuel_price_per_litre ?? 0
+  )
 
   const dispatches = (dispatchRes.data ?? []) as Dispatch[]
   const monthDispatches = dispatches.filter(
@@ -111,6 +123,10 @@ export default async function DashboardPage() {
           </Link>
         </Button>
       </PageHeader>
+
+      <div className="mb-4">
+        <FuelPriceCard fuelPricePerLitre={fuelPricePerLitre} />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
