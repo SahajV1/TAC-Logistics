@@ -101,6 +101,10 @@ export interface Dispatch {
   truck_type: TruckType
   owner_details: string | null
   rent_amount: number
+  rented_advance_amount: number
+  rented_fuel_litres: number
+  rented_fuel_cost: number
+  rented_fuel_station: string | null
   dealer_id: string | null
   fuel_station: string | null
   status: DispatchStatus
@@ -153,6 +157,7 @@ export interface Dealer {
 export interface DealerTransaction {
   id: string
   dealer_id: string
+  dispatch_id: string | null
   txn_date: string
   txn_type: DealerTxnType
   amount: number
@@ -186,6 +191,14 @@ export interface FuelStationPayment {
   notes: string | null
   created_by: string | null
   created_at: string
+  updated_at: string
+}
+
+/** Singleton settings row — currently just the admin-set fuel price. */
+export interface AppSettings {
+  id: string
+  fuel_price_per_litre: number
+  updated_by: string | null
   updated_at: string
 }
 

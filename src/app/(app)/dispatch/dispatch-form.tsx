@@ -81,6 +81,9 @@ function toDefaults(
       truck_type: initial.truck_type,
       owner_details: initial.owner_details ?? "",
       rent_amount: Number(initial.rent_amount),
+      rented_advance_amount: Number(initial.rented_advance_amount),
+      rented_fuel_litres: Number(initial.rented_fuel_litres),
+      rented_fuel_station: initial.rented_fuel_station ?? "",
       dealer_id: initial.dealer_id ?? "",
       new_dealer_name: "",
       fuel_station: initial.fuel_station ?? "",
@@ -105,6 +108,9 @@ function toDefaults(
     truck_type: "company",
     owner_details: "",
     rent_amount: 0,
+    rented_advance_amount: 0,
+    rented_fuel_litres: 0,
+    rented_fuel_station: "",
     dealer_id: "",
     new_dealer_name: "",
     fuel_station: "",
@@ -293,6 +299,7 @@ export function DispatchFormDialog({
   dealers,
   isAdmin,
   defaultBranchId,
+  fuelPricePerLitre,
 }: {
   trigger: React.ReactNode
   initial?: Dispatch | null
@@ -303,6 +310,7 @@ export function DispatchFormDialog({
   dealers: DealerOption[]
   isAdmin: boolean
   defaultBranchId: string | null
+  fuelPricePerLitre: number
 }) {
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
@@ -321,6 +329,27 @@ export function DispatchFormDialog({
 
   const truckType = form.watch("truck_type")
   const selectedBranch = form.watch("branch_id")
+  const fuelLitres = form.watch("fuel_litres")
+
+  // Fuel cost is derived, not typed — litres × the admin-set rate. Staff
+  // only enters litres; recalculates whenever litres or the rate changes.
+  React.useEffect(() => {
+    const computed =
+      Math.round(Number(fuelLitres || 0) * fuelPricePerLitre * 100) / 100
+    form.setValue("fuel_cost", computed, { shouldValidate: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fuelLitres, fuelPricePerLitre])
+
+  // Net payable to the dealer = rent − advance already given − fuel the
+  // dealer's truck took at our pump (both offset what we owe them). This is
+  // display-only; the server recomputes the fuel portion authoritatively and
+  // records all three as dealer ledger entries on save.
+  const rentAmount = form.watch("rent_amount")
+  const rentedAdvance = form.watch("rented_advance_amount")
+  const rentedFuelLitres = form.watch("rented_fuel_litres")
+  const rentedFuelCost =
+    Math.round(Number(rentedFuelLitres || 0) * fuelPricePerLitre * 100) / 100
+  const netPayable = Number(rentAmount || 0) - Number(rentedAdvance || 0) - rentedFuelCost
 
   // Scope pickers to the chosen branch (admin) or the user's branch.
   const branchScope = isAdmin ? selectedBranch : defaultBranchId
@@ -491,10 +520,47 @@ export function DispatchFormDialog({
                     label="Rent amount (₹)"
                   />
                 </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <NumberField
+                    control={form.control}
+                    name="rented_advance_amount"
+                    label="Advance given to dealer (₹)"
+                  />
+                  <NumberField
+                    control={form.control}
+                    name="rented_fuel_litres"
+                    label="Fuel taken by dealer (litres)"
+                  />
+                </div>
+
+                {rentedFuelLitres > 0 ? (
+                  <SelectField
+                    control={form.control}
+                    name="rented_fuel_station"
+                    label="Fuel taken at (petrol pump)"
+                    placeholder="Select pump"
+                    options={fuelStations.map((s) => ({ value: s, label: s }))}
+                  />
+                ) : null}
+
+                <p className="text-muted-foreground text-xs">
+                  Advance and fuel taken are deducted from rent and recorded
+                  in the dealer ledger. Net payable to dealer:{" "}
+                  <span className="text-foreground font-medium">
+                    ₹{netPayable.toFixed(2)}
+                  </span>
+                </p>
               </div>
             ) : null}
 
             <FuelStationField control={form.control} stations={fuelStations} />
+
+            <p className="text-muted-foreground -mb-1 text-xs">
+              {fuelPricePerLitre > 0
+                ? `Fuel rate: ₹${fuelPricePerLitre.toFixed(2)}/litre (set by admin) — cost is calculated automatically.`
+                : "Fuel rate not set by admin yet — fuel cost will show as ₹0 until it is."}
+            </p>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <NumberField
@@ -505,7 +571,8 @@ export function DispatchFormDialog({
               <NumberField
                 control={form.control}
                 name="fuel_cost"
-                label="Fuel cost (₹)"
+                label="Fuel cost (₹, auto)"
+                disabled
               />
               <NumberField
                 control={form.control}

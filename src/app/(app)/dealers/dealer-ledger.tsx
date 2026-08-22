@@ -209,12 +209,17 @@ export function DealerLedger({
       accessorKey: "txn_type",
       header: "Type",
       cell: ({ row }) => (
-        <Badge
-          variant="outline"
-          className={TXN_BADGE_CLASSES[row.original.txn_type]}
-        >
-          {DEALER_TXN_TYPE_LABELS[row.original.txn_type]}
-        </Badge>
+        <div className="space-y-1">
+          <Badge
+            variant="outline"
+            className={TXN_BADGE_CLASSES[row.original.txn_type]}
+          >
+            {DEALER_TXN_TYPE_LABELS[row.original.txn_type]}
+          </Badge>
+          {row.original.dispatch_id ? (
+            <div className="text-muted-foreground text-xs">From dispatch</div>
+          ) : null}
+        </div>
       ),
     },
     {
@@ -261,35 +266,40 @@ export function DealerLedger({
       id: "actions",
       header: "",
       enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex justify-end gap-1">
-          <TransactionFormDialog
-            {...txnFormProps}
-            initial={row.original}
-            trigger={
-              <Button variant="ghost" size="icon-sm">
-                <Pencil />
-                <span className="sr-only">Edit</span>
-              </Button>
-            }
-          />
-          <ConfirmDialog
-            title="Delete ledger entry?"
-            successMessage="Entry deleted"
-            onConfirm={() => deleteDealerTransaction(row.original.id)}
-            trigger={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="text-destructive"
-              >
-                <Trash2 />
-                <span className="sr-only">Delete</span>
-              </Button>
-            }
-          />
-        </div>
-      ),
+      cell: ({ row }) =>
+        row.original.dispatch_id ? (
+          <p className="text-muted-foreground text-right text-xs">
+            Edit the dispatch to change this
+          </p>
+        ) : (
+          <div className="flex justify-end gap-1">
+            <TransactionFormDialog
+              {...txnFormProps}
+              initial={row.original}
+              trigger={
+                <Button variant="ghost" size="icon-sm">
+                  <Pencil />
+                  <span className="sr-only">Edit</span>
+                </Button>
+              }
+            />
+            <ConfirmDialog
+              title="Delete ledger entry?"
+              successMessage="Entry deleted"
+              onConfirm={() => deleteDealerTransaction(row.original.id)}
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-destructive"
+                >
+                  <Trash2 />
+                  <span className="sr-only">Delete</span>
+                </Button>
+              }
+            />
+          </div>
+        ),
     },
   ]
 
