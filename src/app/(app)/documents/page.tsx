@@ -19,7 +19,7 @@ export default async function DocumentsPage() {
       .order("expiry_date", { ascending: true }),
     supabase
       .from("trucks")
-      .select("id, vehicle_number, branch_id")
+      .select("id, vehicle_number, branch_id, branches(id, name)")
       .eq("status", "active")
       .order("vehicle_number"),
   ])
@@ -28,11 +28,11 @@ export default async function DocumentsPage() {
     <>
       <PageHeader
         title="Document Tracking"
-        description="RC, Insurance, Pollution, Fitness & Permit — with uploads and renewal history."
+        description="All of a vehicle's documents in one window: RC, Insurance, Permit, Tax, Fitness & Pollution."
       />
       <DocumentTable
         documents={(docRes.data ?? []) as DocumentRow[]}
-        trucks={(truckRes.data ?? []) as DocTruckOption[]}
+        trucks={(truckRes.data ?? []) as unknown as DocTruckOption[]}
         isAdmin={user.isAdmin}
       />
     </>

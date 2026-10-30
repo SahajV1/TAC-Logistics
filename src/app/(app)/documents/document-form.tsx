@@ -34,6 +34,7 @@ export type DocTruckOption = {
   id: string
   vehicle_number: string
   branch_id: string
+  branches?: { name: string } | null
 }
 
 function toDefaults(
@@ -133,8 +134,8 @@ export function DocumentFormDialog({
             {initial ? "Edit document" : "Add / renew document"}
           </DialogTitle>
           <DialogDescription>
-            RC, Insurance, Pollution, Fitness or Permit. Renewing keeps the old
-            version in history.
+            RC, Insurance, Permit, Tax, Fitness or Pollution. Renewing keeps the
+            old version in history.
           </DialogDescription>
         </DialogHeader>
 

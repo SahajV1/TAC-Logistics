@@ -68,13 +68,13 @@ create table if not exists public.trucks (
   unique (branch_id, vehicle_number)
 );
 
--- Documents (RC / Insurance / Pollution / Fitness / Permit) ------------------
+-- Documents (RC / Insurance / Pollution / Fitness / Permit / Tax) ------------
 -- Each renewal is a NEW row; is_current flags the active one (history preserved).
 create table if not exists public.documents (
   id          uuid primary key default gen_random_uuid(),
   truck_id    uuid not null references public.trucks(id) on delete cascade,
   branch_id   uuid not null references public.branches(id) on delete restrict,
-  doc_type    text not null check (doc_type in ('rc','insurance','pollution','fitness','permit')),
+  doc_type    text not null check (doc_type in ('rc','insurance','pollution','fitness','permit','tax')),
   doc_number  text,
   issue_date  date,
   expiry_date date not null,
