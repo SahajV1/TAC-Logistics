@@ -76,7 +76,42 @@ export function DataTable<TData, TValue>({
         ) : null}
       </div>
 
-      <div className="bg-background overflow-hidden rounded-lg border">
+      {/* Phones and small tablets: each record is a card, so every field and
+          its actions are visible without scrolling sideways through a table. */}
+      <div className="space-y-2 lg:hidden">
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => (
+            <div
+              key={row.id}
+              className="bg-background grid grid-cols-2 gap-x-4 gap-y-2.5 rounded-lg border p-3 text-sm sm:grid-cols-3 [&_*]:whitespace-normal"
+            >
+              {row.getVisibleCells().map((cell) => {
+                const content = flexRender(
+                  cell.column.columnDef.cell,
+                  cell.getContext()
+                )
+                const { header } = cell.column.columnDef
+                return typeof header === "string" && header ? (
+                  <div key={cell.id} className="min-w-0 break-words">
+                    <div className="text-muted-foreground text-xs">{header}</div>
+                    {content}
+                  </div>
+                ) : (
+                  <div key={cell.id} className="col-span-full empty:hidden">
+                    {content}
+                  </div>
+                )
+              })}
+            </div>
+          ))
+        ) : (
+          <p className="bg-background text-muted-foreground rounded-lg border p-6 text-center text-sm">
+            {emptyMessage}
+          </p>
+        )}
+      </div>
+
+      <div className="bg-background hidden overflow-hidden rounded-lg border lg:block">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>

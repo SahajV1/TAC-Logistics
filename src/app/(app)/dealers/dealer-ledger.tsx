@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { ExportButton, type ExportColumn } from "@/components/export-button"
+import { ImportButton } from "@/components/import-button"
 import {
   Tabs,
   TabsContent,
@@ -24,10 +25,15 @@ import {
 } from "@/components/ui/tabs"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
 import { DEALER_TXN_TYPE_LABELS } from "@/lib/constants"
+import { DEALER_TXN_IMPORT_COLUMNS } from "@/lib/import"
 import type { Dealer, DealerTransaction, DealerTxnType } from "@/lib/types"
 import { DealerFormDialog } from "./dealer-form"
 import { TransactionFormDialog } from "./transaction-form"
-import { deleteDealer, deleteDealerTransaction } from "./actions"
+import {
+  deleteDealer,
+  deleteDealerTransaction,
+  importDealerTransactions,
+} from "./actions"
 
 const TXN_BADGE_CLASSES: Record<DealerTxnType, string> = {
   due: "border-amber-600/30 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
@@ -85,6 +91,16 @@ export function DealerLedger({
   }))
 
   const txnFormProps = { dealers: dealerPicks, fuelStations }
+
+  const uploadButton = (
+    <ImportButton
+      title="Upload dealer ledger"
+      description="Upload an Excel or CSV sheet of dues, fuel taken and payments. Nothing is saved until you review the rows and confirm."
+      columns={DEALER_TXN_IMPORT_COLUMNS}
+      templateName="dealer-ledger-upload-template"
+      action={importDealerTransactions}
+    />
+  )
 
   const dealerColumns: ColumnDef<DealerRow>[] = [
     {
@@ -327,7 +343,7 @@ export function DealerLedger({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           title="Outstanding to dealers"
           value={formatCurrency(outstanding)}
@@ -379,6 +395,7 @@ export function DealerLedger({
                   columns={dealerExportColumns}
                   filename="dealer-balances"
                 />
+                {uploadButton}
                 <DealerFormDialog
                   trigger={
                     <Button>
@@ -404,6 +421,7 @@ export function DealerLedger({
                   columns={txnExportColumns}
                   filename="dealer-ledger"
                 />
+                {uploadButton}
                 <TransactionFormDialog
                   {...txnFormProps}
                   trigger={

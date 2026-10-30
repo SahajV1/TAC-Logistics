@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Menu, Truck } from "lucide-react"
+import { Menu } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { BrandLogo } from "./brand-logo"
 import { SidebarNav } from "./sidebar-nav"
 import { UserMenu } from "./user-menu"
 import { ThemeToggle } from "./theme-toggle"
@@ -28,11 +29,9 @@ function Brand() {
   return (
     <Link
       href="/"
-      className="flex h-14 items-center gap-2 border-b px-5 font-semibold"
+      className="flex h-14 shrink-0 items-center gap-2 border-b px-5 font-semibold"
     >
-      <span className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-lg">
-        <Truck className="size-4" />
-      </span>
+      <BrandLogo className="h-9" />
       <span className="tracking-tight">{APP_NAME}</span>
     </Link>
   )
@@ -74,10 +73,13 @@ export function AppShell({
             <SheetContent side="left" className="w-72 p-0">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <Brand />
-              <SidebarNav
-                isAdmin={user.isAdmin}
-                onNavigate={() => setOpen(false)}
-              />
+              {/* Scrolls so the whole menu is reachable on a phone held sideways */}
+              <div className="flex-1 overflow-y-auto">
+                <SidebarNav
+                  isAdmin={user.isAdmin}
+                  onNavigate={() => setOpen(false)}
+                />
+              </div>
             </SheetContent>
           </Sheet>
 

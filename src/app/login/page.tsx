@@ -1,5 +1,5 @@
-import { Truck } from "lucide-react"
 import { LoginForm } from "./login-form"
+import { BrandLogo } from "@/components/brand-logo"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
   Card,
@@ -28,9 +28,7 @@ export default async function LoginPage({
       </div>
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="bg-primary text-primary-foreground flex size-12 items-center justify-center rounded-xl">
-            <Truck className="size-6" />
-          </div>
+          <BrandLogo variant="full" className="h-32 rounded-xl p-2" />
           <h1 className="text-xl font-semibold tracking-tight">
             {APP_FULL_NAME}
           </h1>

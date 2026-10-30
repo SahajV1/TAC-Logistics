@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { MAX_IMPORT_ROWS } from "@/lib/import"
 
 // Numbers come from <NumberField>, which always emits a number (empty → 0),
 // so we validate plain numbers (no coercion) to keep form types clean.
@@ -83,7 +84,7 @@ export const truckSchema = z
 
 export const documentSchema = z.object({
   truck_id: z.string().min(1, "Select a truck"),
-  doc_type: z.enum(["rc", "insurance", "pollution", "fitness", "permit"]),
+  doc_type: z.enum(["rc", "insurance", "pollution", "fitness", "permit", "tax"]),
   doc_number: z.string().optional(),
   issue_date: z.string().optional(),
   expiry_date: z.string().min(1, "Expiry date is required"),
@@ -147,6 +148,27 @@ export const pumpPaymentSchema = z.object({
 
 export const fuelPriceSchema = z.object({
   fuel_price_per_litre: z.number().gt(0, "Must be more than 0"),
+})
+
+// What the Excel upload actions receive: rows the browser read from the sheet.
+export const importRequestSchema = z.object({
+  rows: z
+    .array(
+      z.object({
+        row: z.number().int().positive(),
+        cells: z.record(
+          z.string(),
+          z.union([z.string(), z.number(), z.boolean(), z.null()])
+        ),
+      })
+    )
+    .min(1)
+    .max(MAX_IMPORT_ROWS),
+  options: z.object({
+    commit: z.boolean(),
+    includeDuplicates: z.boolean(),
+    branchId: z.string().optional(),
+  }),
 })
 
 export const userSchema = z.object({

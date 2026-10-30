@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
+import { fetchAll } from "@/lib/supabase/fetch-all"
 import { PageHeader } from "@/components/page-header"
 import { DealerLedger } from "./dealer-ledger"
 import type { Dealer, DealerTransaction } from "@/lib/types"
@@ -12,11 +13,15 @@ export default async function DealersPage() {
 
   const [dealerRes, txnRes, stationRes] = await Promise.all([
     supabase.from("dealers").select("*").order("name"),
-    supabase
-      .from("dealer_transactions")
-      .select("*, dealers(id, name)")
-      .order("txn_date", { ascending: false })
-      .order("created_at", { ascending: false }),
+    fetchAll<DealerTransaction>((from, to) =>
+      supabase
+        .from("dealer_transactions")
+        .select("*, dealers(id, name)")
+        .order("txn_date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(from, to)
+    ),
     supabase
       .from("fuel_stations")
       .select("name")
@@ -36,7 +41,7 @@ export default async function DealersPage() {
       />
       <DealerLedger
         dealers={(dealerRes.data ?? []) as Dealer[]}
-        transactions={(txnRes.data ?? []) as DealerTransaction[]}
+        transactions={txnRes.data ?? []}
         fuelStations={fuelStations}
       />
     </>

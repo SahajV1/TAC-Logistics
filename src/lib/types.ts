@@ -3,7 +3,13 @@
 export type Role = "admin" | "staff"
 export type TruckType = "company" | "rented"
 export type EntityStatus = "active" | "inactive"
-export type DocType = "rc" | "insurance" | "pollution" | "fitness" | "permit"
+export type DocType =
+  | "rc"
+  | "insurance"
+  | "pollution"
+  | "fitness"
+  | "permit"
+  | "tax"
 export type DispatchStatus =
   | "pending"
   | "in_transit"

@@ -12,12 +12,13 @@ export const APP_FULL_NAME = "TAC Logistics"
 // Fixed id of the singleton app_settings row (see supabase/app_settings.sql).
 export const APP_SETTINGS_ID = "00000000-0000-0000-0000-000000000001"
 
-export const DOC_TYPES: { value: DocType; label: string }[] = [
-  { value: "rc", label: "Registration (RC)" },
-  { value: "insurance", label: "Insurance" },
-  { value: "pollution", label: "Pollution (PUC)" },
-  { value: "fitness", label: "Fitness" },
-  { value: "permit", label: "Permit" },
+export const DOC_TYPES: { value: DocType; label: string; short: string }[] = [
+  { value: "rc", label: "Registration (RC)", short: "RC" },
+  { value: "insurance", label: "Insurance", short: "Insurance" },
+  { value: "permit", label: "Permit", short: "Permit" },
+  { value: "tax", label: "Tax", short: "Tax" },
+  { value: "fitness", label: "Fitness", short: "Fitness" },
+  { value: "pollution", label: "Pollution (PUC)", short: "PUC" },
 ]
 
 export const DOC_TYPE_LABELS: Record<DocType, string> = Object.fromEntries(

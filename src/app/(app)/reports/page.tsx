@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
+import { fetchAll } from "@/lib/supabase/fetch-all"
 import { PageHeader } from "@/components/page-header"
 import { ReportView, type BranchRow, type MonthRow } from "./report-view"
 import type { Dispatch } from "@/lib/types"
@@ -12,12 +13,16 @@ export default async function ReportsPage() {
   const user = await requireAdmin()
   const supabase = await createClient()
 
-  const { data } = await supabase
-    .from("dispatches")
-    .select("*, branches(id, name)")
-    .order("dispatch_date", { ascending: false })
+  const { data } = await fetchAll<Dispatch>((from, to) =>
+    supabase
+      .from("dispatches")
+      .select("*, branches(id, name)")
+      .order("dispatch_date", { ascending: false })
+      .order("id")
+      .range(from, to)
+  )
 
-  const dispatches = (data ?? []) as Dispatch[]
+  const dispatches = data ?? []
 
   // Monthly aggregation
   const monthMap = new Map<string, MonthRow>()
