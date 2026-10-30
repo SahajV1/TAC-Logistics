@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
+import { fetchAll } from "@/lib/supabase/fetch-all"
 import { PageHeader } from "@/components/page-header"
 import { DispatchTable } from "./dispatch-table"
 import { APP_SETTINGS_ID } from "@/lib/constants"
@@ -26,13 +27,17 @@ export default async function DispatchPage() {
     dealerRes,
     settingsRes,
   ] = await Promise.all([
-    supabase
-      .from("dispatches")
-      .select(
-        "*, branches(id, name), creator:profiles!created_by(id, full_name), dealers(id, name)"
-      )
-      .order("dispatch_date", { ascending: false })
-      .order("created_at", { ascending: false }),
+    fetchAll<Dispatch>((from, to) =>
+      supabase
+        .from("dispatches")
+        .select(
+          "*, branches(id, name), creator:profiles!created_by(id, full_name), dealers(id, name)"
+        )
+        .order("dispatch_date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(from, to)
+    ),
     supabase
       .from("drivers")
       .select("id, name, branch_id")
@@ -80,7 +85,7 @@ export default async function DispatchPage() {
         description="Record trips with fuel, advance, toll, rent and miscellaneous costs."
       />
       <DispatchTable
-        dispatches={(dispatchRes.data ?? []) as Dispatch[]}
+        dispatches={dispatchRes.data ?? []}
         drivers={(driverRes.data ?? []) as DriverOption[]}
         trucks={(truckRes.data ?? []) as TruckOption[]}
         branches={(branchRes.data ?? []) as BranchOption[]}

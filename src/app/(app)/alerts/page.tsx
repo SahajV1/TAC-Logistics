@@ -64,7 +64,7 @@ export default async function AlertsPage() {
         description={`Documents and licences expiring within ${EXPIRY_WINDOW_DAYS} days. Daily email reminders fire at 30, 15, 7 and 1 day.`}
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           title="Expired"
           value={expired}
@@ -96,7 +96,7 @@ export default async function AlertsPage() {
           <CardHeader className="flex-row items-center justify-between">
             <div>
               <CardTitle>Vehicle documents</CardTitle>
-              <CardDescription>RC, Insurance, PUC, Fitness, Permit</CardDescription>
+              <CardDescription>RC, Insurance, Permit, Tax, Fitness, PUC</CardDescription>
             </div>
             <Button asChild variant="outline" size="sm">
               <Link href="/documents">Manage</Link>

@@ -12,6 +12,7 @@ import {
 import { redirect } from "next/navigation"
 import { requireUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
+import { fetchAll } from "@/lib/supabase/fetch-all"
 import { PageHeader } from "@/components/page-header"
 import { StatCard } from "@/components/stat-card"
 import { FuelPriceCard } from "./fuel-price-card"
@@ -52,10 +53,14 @@ export default async function DashboardPage() {
 
   const [dispatchRes, docRes, driverCount, truckCount, settingsRes] =
     await Promise.all([
-      supabase
-        .from("dispatches")
-        .select("*, branches(id, name)")
-        .order("dispatch_date", { ascending: false }),
+      fetchAll<Dispatch>((from, to) =>
+        supabase
+          .from("dispatches")
+          .select("*, branches(id, name)")
+          .order("dispatch_date", { ascending: false })
+          .order("id")
+          .range(from, to)
+      ),
       supabase
         .from("documents")
         .select("*, trucks(id, vehicle_number)")
@@ -80,7 +85,7 @@ export default async function DashboardPage() {
       ?.fuel_price_per_litre ?? 0
   )
 
-  const dispatches = (dispatchRes.data ?? []) as Dispatch[]
+  const dispatches = dispatchRes.data ?? []
   const monthDispatches = dispatches.filter(
     (d) => d.dispatch_date >= monthStart
   )
@@ -128,7 +133,7 @@ export default async function DashboardPage() {
         <FuelPriceCard fuelPricePerLitre={fuelPricePerLitre} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           title="Dispatches this month"
           value={monthDispatches.length}
@@ -157,7 +162,7 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           title="Active drivers"
           value={driverCount.count ?? 0}

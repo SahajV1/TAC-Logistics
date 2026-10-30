@@ -10,7 +10,8 @@ Built with **Next.js 16** (App Router), **TypeScript**, **Tailwind CSS v4**, **s
 
 - **Role-based auth & branch isolation** — enforced in the database with Row Level Security (RLS). Staff are scoped to their branch; Admin has full access.
 - **Truck Dispatch** — driver, vehicle, from/to, fuel litres & cost, advance, misc, remarks, company/rented truck type with conditional owner details + rent.
-- **Driver, Truck & Document management** — full CRUD. Documents store RC, Insurance, Pollution, Fitness & Permit with file uploads, expiry dates and **renewal history**.
+- **Driver, Truck & Document management** — full CRUD. Each vehicle's RC, Insurance, Permit, Tax, Fitness & Pollution documents sit together in **one window**, with file uploads, expiry dates and **renewal history**.
+- **Excel upload** — Dispatch, Salaries, Dealer Ledger, Rented Vehicles and Petrol Pumps each take an `.xlsx`, `.xls` or `.csv` sheet (up to 5000 rows). Every row is checked and shown for review before anything is saved, and rows already in the portal are held back as duplicates.
 - **Expiry alerts** — dashboard + a dedicated Alerts page, plus **automated daily emails** at 30 / 15 / 7 / 1 days before expiry (and overdue).
 - **Audit log** — every create/update/delete is recorded automatically via DB triggers.
 - **Admin dashboard & reports** — dispatch analytics, fuel & rent expenses, branch-wise reports, salary management, searchable tables and one-click **Excel export** everywhere.
@@ -37,6 +38,8 @@ npm install
 
 1. Create a new project at <https://supabase.com>.
 2. Open **SQL Editor → New query**, paste the entire contents of [`supabase/schema.sql`](supabase/schema.sql) and **Run**. This creates all tables, RLS policies, audit/expiry triggers, the two branches, and the private `documents` storage bucket.
+
+Already have a database? Run any `supabase/*.sql` migration you haven't applied yet the same way. Each file says what it does and is safe to re-run. The latest is [`supabase/document_tax_type.sql`](supabase/document_tax_type.sql), required for the Tax document type.
 
 ## 3. Configure environment
 
@@ -81,6 +84,21 @@ Open <http://localhost:3000> and sign in.
 - **Admin (Shivansh)** — sees and manages all branches and every module, including Staff management and the Audit log.
 - **Staff** — scoped to a single branch (Lucknow or Ghaziabad). They can only read and write records for their own branch; this is enforced by Postgres RLS, not just the UI.
 
+## Excel upload
+
+Each page's **Upload** button offers a blank template, but any sheet works: columns are matched by header name in any order, a title above the headers is fine, and a sheet from the page's **Export** button can be uploaded back.
+
+- **Checked before saving** — every row is shown as ready, duplicate or error first. Rows with errors are skipped; fix them in the sheet and upload it again.
+- **Names are matched** to existing trucks, drivers, dealers and pumps ignoring case and spacing. A new dealer or pump is added automatically, and the review says so.
+- **Typed dates are read day-first** (dd/mm/yyyy). A date that only works month-first is refused rather than guessed.
+- **Fuel cost** is litres × the admin rate, as on the form. Only admins can state it in the sheet, for old trips bought at an older rate.
+- **Rented Vehicles** rows become rented dispatches and update the dealer ledger, exactly like the dispatch form.
+- **Petrol Pumps** takes payments only. Fuel taken is worked out from dispatches and dealer entries, so uploading it here would count it twice.
+
+## Logo
+
+The artwork lives in `public/`: `logo.png` is the full logo (login page) and `logo-mark.png` is the TAC mark alone (sidebar and mobile menu, where the company name would be unreadable). Both are shown through `BrandLogo`, which adds a white backing so the maroon stays legible in dark mode. The browser-tab icon is `src/app/icon.png`.
+
 ## Email notifications & cron
 
 - The route `GET /api/cron/check-expiry` computes documents/licences hitting the 30/15/7/1-day thresholds (and overdue) and emails each branch's staff + all admins via Resend.
@@ -117,8 +135,10 @@ src/
     supabase/              # browser / server / admin / proxy clients
     auth.ts                # getCurrentUser, requireUser, requireAdmin
     schemas.ts             # Zod schemas shared by client & server
+    import.ts              # Excel upload: sheet columns and cell parsing
+    import-workbook.ts     # Reads the workbook (browser only)
     types.ts, constants.ts, format.ts, expiry.ts, email.ts
-  components/              # DataTable, form fields, badges, app shell, …
+  components/              # DataTable, ImportButton, form fields, badges, app shell, …
   app/
     login/                 # Auth pages + server actions
     (app)/                 # Authenticated shell + all modules
