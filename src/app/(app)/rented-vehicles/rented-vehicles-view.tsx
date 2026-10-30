@@ -6,6 +6,7 @@ import { DataTable } from "@/components/data-table"
 import { StatCard } from "@/components/stat-card"
 import { Badge } from "@/components/ui/badge"
 import { ExportButton, type ExportColumn } from "@/components/export-button"
+import { ImportButton } from "@/components/import-button"
 import {
   Tabs,
   TabsContent,
@@ -14,7 +15,9 @@ import {
 } from "@/components/ui/tabs"
 import { formatCurrency, formatDate } from "@/lib/format"
 import { DISPATCH_STATUS_LABELS } from "@/lib/constants"
+import { RENTED_IMPORT_COLUMNS, type ImportCell } from "@/lib/import"
 import type { Dispatch, DispatchStatus } from "@/lib/types"
+import { importRentedDispatches } from "../dispatch/actions"
 
 export type RentedTrip = Pick<
   Dispatch,
@@ -72,10 +75,25 @@ function summarize(key: string, name: string, linked: boolean, trips: RentedTrip
 export function RentedVehiclesView({
   dealers,
   trips,
+  branches,
 }: {
   dealers: DealerOption[]
   trips: RentedTrip[]
+  /** Passed for admins, who choose a branch for rows that don't name one. */
+  branches?: { id: string; name: string }[]
 }) {
+  const uploadButton = (defaults?: Record<string, ImportCell>) => (
+    <ImportButton
+      title="Upload rented vehicles"
+      description="Upload an Excel or CSV sheet of rented trips. Each row becomes a rented dispatch and updates the dealer ledger. Nothing is saved until you review the rows and confirm."
+      columns={RENTED_IMPORT_COLUMNS}
+      templateName="rented-vehicles-upload-template"
+      action={importRentedDispatches}
+      branches={branches}
+      defaults={defaults}
+    />
+  )
+
   const tripsByDealer = new Map<string, RentedTrip[]>()
   const unlinked: RentedTrip[] = []
   for (const t of trips) {
@@ -223,6 +241,7 @@ export function RentedVehiclesView({
   const tripExportColumns: ExportColumn<RentedTrip>[] = [
     { header: "Date", value: (t) => t.dispatch_date },
     { header: "Vehicle", value: (t) => t.vehicle_number },
+    { header: "Dealer", value: (t) => t.dealers?.name ?? "" },
     { header: "Owner Details", value: (t) => t.owner_details ?? "" },
     { header: "Driver", value: (t) => t.driver_name },
     { header: "From", value: (t) => t.from_location },
@@ -233,16 +252,21 @@ export function RentedVehiclesView({
 
   if (dealerList.length === 0 && unlinked.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No dealers yet. Add the dealers you rent trucks from on the Dealer
-        Ledger page, then pick one whenever a dispatch is marked &quot;Rented&quot;.
-      </p>
+      <div className="space-y-3">
+        <p className="text-muted-foreground text-sm">
+          No dealers yet. Add the dealers you rent trucks from on the Dealer
+          Ledger page, then pick one whenever a dispatch is marked
+          &quot;Rented&quot;. Dealers named in an uploaded sheet are added
+          automatically.
+        </p>
+        {uploadButton()}
+      </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           title="Rental trips"
           value={totalTrips}
@@ -271,7 +295,7 @@ export function RentedVehiclesView({
       </div>
 
       <Tabs defaultValue="summary">
-        <TabsList className="flex-wrap">
+        <TabsList>
           <TabsTrigger value="summary">By Dealer</TabsTrigger>
           {summaryRows.map((r) => (
             <TabsTrigger key={r.key} value={r.key}>
@@ -287,11 +311,14 @@ export function RentedVehiclesView({
             searchPlaceholder="Search dealer…"
             emptyMessage="No dealers yet."
             toolbar={
-              <ExportButton
-                rows={summaryRows}
-                columns={summaryExportColumns}
-                filename="rented-vehicles-by-dealer"
-              />
+              <>
+                <ExportButton
+                  rows={summaryRows}
+                  columns={summaryExportColumns}
+                  filename="rented-vehicles-by-dealer"
+                />
+                {uploadButton()}
+              </>
             }
           />
         </TabsContent>
@@ -300,7 +327,7 @@ export function RentedVehiclesView({
           const dealerTrips = tripsFor(r.key)
           return (
             <TabsContent key={r.key} value={r.key} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
                 <StatCard
                   title="Trucks rented"
                   value={r.trucks}
@@ -336,11 +363,14 @@ export function RentedVehiclesView({
                 searchPlaceholder="Search vehicle, driver, route…"
                 emptyMessage="No rented trips for this dealer yet."
                 toolbar={
-                  <ExportButton
-                    rows={dealerTrips}
-                    columns={tripExportColumns}
-                    filename={`rented-${r.name.toLowerCase().replace(/\s+/g, "-")}`}
-                  />
+                  <>
+                    <ExportButton
+                      rows={dealerTrips}
+                      columns={tripExportColumns}
+                      filename={`rented-${r.name.toLowerCase().replace(/\s+/g, "-")}`}
+                    />
+                    {uploadButton(r.linked ? { dealer: r.name } : undefined)}
+                  </>
                 }
               />
             </TabsContent>

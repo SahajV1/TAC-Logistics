@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { ExportButton, type ExportColumn } from "@/components/export-button"
+import { ImportButton } from "@/components/import-button"
 import {
   Tabs,
   TabsContent,
@@ -24,6 +25,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
+import { PUMP_PAYMENT_IMPORT_COLUMNS } from "@/lib/import"
 import type {
   DealerTransaction,
   Dispatch,
@@ -31,7 +33,7 @@ import type {
   FuelStationPayment,
 } from "@/lib/types"
 import { PumpPaymentDialog } from "./payment-form"
-import { deletePumpPayment } from "./actions"
+import { deletePumpPayment, importPumpPayments } from "./actions"
 
 /** The dispatch fields the pumps page needs for a fill-up row. */
 export type PumpFillUp = Pick<
@@ -315,7 +317,7 @@ export function PumpLedger({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           title="To pay (all pumps)"
           value={formatCurrency(overall.toPay)}
@@ -359,7 +361,7 @@ export function PumpLedger({
           const entries = entriesByPump.get(name) ?? []
           return (
             <TabsContent key={name} value={name} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                 <StatCard
                   title="Fuel taken"
                   value={`${formatNumber(totals.litres)} L`}
@@ -406,6 +408,14 @@ export function PumpLedger({
                       rows={entries}
                       columns={exportColumns}
                       filename={`pump-${name.toLowerCase().replace(/\s+/g, "-")}`}
+                    />
+                    <ImportButton
+                      title="Upload pump payments"
+                      description={`Upload an Excel or CSV sheet of payments to pumps. Rows with no pump go to ${name}. Fuel taken comes from dispatches and the dealer ledger, so it isn't uploaded here. Nothing is saved until you review the rows and confirm.`}
+                      columns={PUMP_PAYMENT_IMPORT_COLUMNS}
+                      templateName="pump-payment-upload-template"
+                      action={importPumpPayments}
+                      defaults={{ pump: name }}
                     />
                     <PumpPaymentDialog
                       fuelStations={pumpNames}

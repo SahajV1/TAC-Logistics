@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { ExportButton, type ExportColumn } from "@/components/export-button"
+import { ImportButton } from "@/components/import-button"
 import {
   Tabs,
   TabsContent,
@@ -16,13 +17,14 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { formatCurrency, formatMonth } from "@/lib/format"
+import { SALARY_IMPORT_COLUMNS } from "@/lib/import"
 import type { Branch, PersonType, Salary } from "@/lib/types"
 import {
   SalaryFormDialog,
   type DriverPick,
   type StaffPick,
 } from "./salary-form"
-import { deleteSalary, toggleSalaryPaid } from "./actions"
+import { deleteSalary, importSalaries, toggleSalaryPaid } from "./actions"
 
 function PaidToggle({ id, paid }: { id: string; paid: boolean }) {
   const router = useRouter()
@@ -202,6 +204,15 @@ export function SalaryTable({
       toolbar={
         <>
           <ExportButton rows={rows} columns={exportColumns} filename={filename} />
+          <ImportButton
+            title="Upload salaries"
+            description="Upload an Excel or CSV sheet of salaries. Nothing is saved until you review the rows and confirm."
+            columns={SALARY_IMPORT_COLUMNS}
+            templateName="salary-upload-template"
+            action={importSalaries}
+            branches={isAdmin ? branches : undefined}
+            defaults={defaultPersonType ? { type: defaultPersonType } : undefined}
+          />
           <SalaryFormDialog
             {...lookups}
             defaultPersonType={defaultPersonType}

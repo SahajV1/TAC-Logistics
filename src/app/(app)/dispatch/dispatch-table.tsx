@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { ExportButton, type ExportColumn } from "@/components/export-button"
+import { ImportButton } from "@/components/import-button"
 import { formatCurrency, formatDate } from "@/lib/format"
 import { DISPATCH_STATUS_LABELS } from "@/lib/constants"
+import { DISPATCH_IMPORT_COLUMNS } from "@/lib/import"
 import type { Dispatch, DispatchStatus } from "@/lib/types"
 import {
   DispatchFormDialog,
@@ -17,7 +19,7 @@ import {
   type DriverOption,
   type TruckOption,
 } from "./dispatch-form"
-import { deleteDispatch } from "./actions"
+import { deleteDispatch, importDispatches } from "./actions"
 
 const STATUS_VARIANT: Record<
   DispatchStatus,
@@ -236,6 +238,14 @@ export function DispatchTable({
             rows={dispatches}
             columns={exportColumns}
             filename="dispatches"
+          />
+          <ImportButton
+            title="Upload dispatches"
+            description="Upload an Excel or CSV sheet of trips. Nothing is saved until you review the rows and confirm."
+            columns={DISPATCH_IMPORT_COLUMNS}
+            templateName="dispatch-upload-template"
+            action={importDispatches}
+            branches={isAdmin ? branches : undefined}
           />
           <DispatchFormDialog
             {...lookups}

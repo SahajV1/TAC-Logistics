@@ -2,121 +2,98 @@
 
 import * as React from "react"
 import { type ColumnDef } from "@tanstack/react-table"
-import { Eye, History, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react"
-import { toast } from "sonner"
+import { FolderOpen, Plus } from "lucide-react"
 import { DataTable } from "@/components/data-table"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { ConfirmDialog } from "@/components/confirm-dialog"
 import { ExportButton, type ExportColumn } from "@/components/export-button"
 import { ExpiryBadge } from "@/components/badges"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import { formatDate } from "@/lib/format"
-import { daysUntil } from "@/lib/format"
-import { DOC_TYPE_LABELS } from "@/lib/constants"
-import type { DocumentRow } from "@/lib/types"
+import { daysUntil, expiryStatus } from "@/lib/format"
+import { DOC_TYPES, DOC_TYPE_LABELS } from "@/lib/constants"
+import { cn } from "@/lib/utils"
+import type { DocType, DocumentRow } from "@/lib/types"
 import { DocumentFormDialog, type DocTruckOption } from "./document-form"
-import { deleteDocument, getDocumentHistory, getSignedUrl } from "./actions"
+import {
+  VehicleDocumentsDialog,
+  type VehicleDocuments,
+} from "./vehicle-documents-dialog"
 
-function ViewFileButton({
-  path,
-  size = "xs",
+const CHIP_CLASSES = {
+  ok: "border-emerald-600/30 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
+  warning:
+    "border-amber-600/30 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
+  critical: "border-red-600/30 bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400",
+  expired: "border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-600",
+  missing: "text-muted-foreground border-dashed",
+}
+
+/** One document type at a glance: coloured by expiry, dashed if not on file. */
+function DocChip({
+  label,
+  type,
+  doc,
 }: {
-  path: string | null
-  size?: "xs" | "sm"
+  label: string
+  type: DocType
+  doc?: DocumentRow
 }) {
-  const [loading, setLoading] = React.useState(false)
-  if (!path) return <span className="text-muted-foreground text-sm">—</span>
-
-  async function open() {
-    setLoading(true)
-    const res = await getSignedUrl(path!)
-    setLoading(false)
-    if (res.url) window.open(res.url, "_blank", "noopener")
-    else toast.error(res.error ?? "Could not open file")
-  }
-
+  const status = doc ? expiryStatus(daysUntil(doc.expiry_date)) : null
   return (
-    <Button variant="outline" size={size} onClick={open} disabled={loading}>
-      <Eye /> View
-    </Button>
+    <span
+      title={
+        doc && status
+          ? `${DOC_TYPE_LABELS[type]}: ${formatDate(doc.expiry_date)} · ${status.label}`
+          : `${DOC_TYPE_LABELS[type]}: not added`
+      }
+      className={cn(
+        "inline-flex items-center rounded-md border px-1.5 py-0.5 text-xs font-medium",
+        CHIP_CLASSES[status?.level ?? "missing"]
+      )}
+    >
+      {label}
+    </span>
   )
 }
 
-function HistoryDialog({
-  truckId,
-  docType,
-  vehicle,
-  trigger,
-}: {
-  truckId: string
-  docType: string
-  vehicle: string
-  trigger: React.ReactNode
-}) {
-  const [open, setOpen] = React.useState(false)
-  const [rows, setRows] = React.useState<DocumentRow[] | null>(null)
+// Every active truck gets a row, even with nothing on file, so gaps are visible.
+// Documents can also belong to a truck that has since gone inactive.
+function groupByVehicle(
+  documents: DocumentRow[],
+  trucks: DocTruckOption[]
+): VehicleDocuments[] {
+  const vehicles = new Map<string, VehicleDocuments>()
+  const vehicleFor = (truckId: string, vehicle: string, branchName: string) => {
+    const existing = vehicles.get(truckId)
+    if (existing) return existing
+    const created: VehicleDocuments = {
+      truckId,
+      vehicle,
+      branchName,
+      docs: {},
+      nextExpiry: null,
+    }
+    vehicles.set(truckId, created)
+    return created
+  }
 
-  function handleOpenChange(next: boolean) {
-    setOpen(next)
-    if (next) {
-      setRows(null)
-      getDocumentHistory(truckId, docType).then(setRows)
+  for (const t of trucks) {
+    vehicleFor(t.id, t.vehicle_number, t.branches?.name ?? "")
+  }
+  for (const d of documents) {
+    const vehicle = vehicleFor(
+      d.truck_id,
+      d.trucks?.vehicle_number ?? "—",
+      d.branches?.name ?? ""
+    )
+    vehicle.docs[d.doc_type] = d
+    if (!vehicle.nextExpiry || d.expiry_date < vehicle.nextExpiry) {
+      vehicle.nextExpiry = d.expiry_date
     }
   }
 
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
-            {DOC_TYPE_LABELS[docType as keyof typeof DOC_TYPE_LABELS]} history ·{" "}
-            {vehicle}
-          </DialogTitle>
-          <DialogDescription>All recorded versions, newest first.</DialogDescription>
-        </DialogHeader>
-        <div className="max-h-[60dvh] space-y-2 overflow-y-auto">
-          {rows === null ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
-          ) : rows.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No history.</p>
-          ) : (
-            rows.map((r) => (
-              <div
-                key={r.id}
-                className="flex items-center justify-between gap-3 rounded-lg border p-3"
-              >
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">
-                      {r.doc_number || "No number"}
-                    </span>
-                    {r.is_current ? (
-                      <Badge variant="outline" className="text-xs">
-                        current
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <p className="text-muted-foreground text-xs">
-                    Expiry {formatDate(r.expiry_date)} · added{" "}
-                    {formatDate(r.created_at)}
-                  </p>
-                </div>
-                <ViewFileButton path={r.file_url} />
-              </div>
-            ))
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+  // Most urgent first; vehicles with nothing on file at the end.
+  return [...vehicles.values()].sort(
+    (a, b) => daysUntil(a.nextExpiry) - daysUntil(b.nextExpiry)
   )
 }
 
@@ -129,47 +106,61 @@ export function DocumentTable({
   trucks: DocTruckOption[]
   isAdmin: boolean
 }) {
-  const columns: ColumnDef<DocumentRow>[] = [
+  const vehicles = groupByVehicle(documents, trucks)
+
+  // Holds the id, not the row, so the open window picks up fresh data after a
+  // document inside it is added, renewed, edited or deleted.
+  const [openTruckId, setOpenTruckId] = React.useState<string | null>(null)
+  const openVehicle = vehicles.find((v) => v.truckId === openTruckId) ?? null
+
+  const columns: ColumnDef<VehicleDocuments>[] = [
     {
-      id: "vehicle",
+      accessorKey: "vehicle",
       header: "Vehicle",
-      accessorFn: (r) => r.trucks?.vehicle_number ?? "",
-      cell: ({ row }) => row.original.trucks?.vehicle_number ?? "—",
-    },
-    {
-      id: "doc_type",
-      header: "Type",
-      accessorFn: (r) => DOC_TYPE_LABELS[r.doc_type],
       cell: ({ row }) => (
-        <Badge variant="secondary">
-          {DOC_TYPE_LABELS[row.original.doc_type]}
-        </Badge>
+        <button
+          type="button"
+          onClick={() => setOpenTruckId(row.original.truckId)}
+          className="text-left font-medium underline-offset-4 hover:underline"
+        >
+          {row.original.vehicle}
+        </button>
       ),
     },
     {
-      accessorKey: "doc_number",
-      header: "Number",
-      cell: ({ row }) => row.original.doc_number ?? "—",
+      id: "documents",
+      header: "Documents",
+      // Also what search looks through, so a policy number finds its vehicle.
+      accessorFn: (v) =>
+        Object.values(v.docs)
+          .map((d) => `${DOC_TYPE_LABELS[d.doc_type]} ${d.doc_number ?? ""}`)
+          .join(" "),
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {DOC_TYPES.map(({ value, short }) => (
+            <DocChip
+              key={value}
+              label={short}
+              type={value}
+              doc={row.original.docs[value]}
+            />
+          ))}
+        </div>
+      ),
     },
     {
       id: "expiry",
-      header: "Expiry",
-      accessorFn: (r) => daysUntil(r.expiry_date),
-      cell: ({ row }) => <ExpiryBadge date={row.original.expiry_date} />,
-    },
-    {
-      id: "file",
-      header: "File",
-      enableSorting: false,
-      cell: ({ row }) => <ViewFileButton path={row.original.file_url} />,
+      header: "Next expiry",
+      accessorFn: (v) => daysUntil(v.nextExpiry),
+      cell: ({ row }) => <ExpiryBadge date={row.original.nextExpiry} />,
     },
     ...(isAdmin
       ? [
           {
-            id: "branch",
+            accessorKey: "branchName",
             header: "Branch",
-            accessorFn: (r: DocumentRow) => r.branches?.name ?? "",
-          } as ColumnDef<DocumentRow>,
+          } as ColumnDef<VehicleDocuments>,
         ]
       : []),
     {
@@ -177,57 +168,14 @@ export function DocumentTable({
       header: "",
       enableSorting: false,
       cell: ({ row }) => (
-        <div className="flex justify-end gap-1">
-          <DocumentFormDialog
-            trucks={trucks}
-            preset={{
-              truckId: row.original.truck_id,
-              docType: row.original.doc_type,
-            }}
-            trigger={
-              <Button variant="ghost" size="icon-sm" title="Renew">
-                <RefreshCw />
-                <span className="sr-only">Renew</span>
-              </Button>
-            }
-          />
-          <HistoryDialog
-            truckId={row.original.truck_id}
-            docType={row.original.doc_type}
-            vehicle={row.original.trucks?.vehicle_number ?? ""}
-            trigger={
-              <Button variant="ghost" size="icon-sm" title="History">
-                <History />
-                <span className="sr-only">History</span>
-              </Button>
-            }
-          />
-          <DocumentFormDialog
-            trucks={trucks}
-            initial={row.original}
-            trigger={
-              <Button variant="ghost" size="icon-sm" title="Edit">
-                <Pencil />
-                <span className="sr-only">Edit</span>
-              </Button>
-            }
-          />
-          <ConfirmDialog
-            title="Delete document?"
-            description="This removes the current version and its file. History versions remain."
-            successMessage="Document deleted"
-            onConfirm={() => deleteDocument(row.original.id)}
-            trigger={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="text-destructive"
-              >
-                <Trash2 />
-                <span className="sr-only">Delete</span>
-              </Button>
-            }
-          />
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setOpenTruckId(row.original.truckId)}
+          >
+            <FolderOpen /> View all
+          </Button>
         </div>
       ),
     },
@@ -245,28 +193,35 @@ export function DocumentTable({
   ]
 
   return (
-    <DataTable
-      columns={columns}
-      data={documents}
-      searchPlaceholder="Search vehicle, type, number…"
-      emptyMessage="No documents yet. Add RC, Insurance, Pollution, Fitness or Permit."
-      toolbar={
-        <>
-          <ExportButton
-            rows={documents}
-            columns={exportColumns}
-            filename="documents"
-          />
-          <DocumentFormDialog
-            trucks={trucks}
-            trigger={
-              <Button>
-                <Plus /> Add document
-              </Button>
-            }
-          />
-        </>
-      }
-    />
+    <>
+      <DataTable
+        columns={columns}
+        data={vehicles}
+        searchPlaceholder="Search vehicle or document number…"
+        emptyMessage="No vehicles yet. Add a truck to start filing its documents."
+        toolbar={
+          <>
+            <ExportButton
+              rows={documents}
+              columns={exportColumns}
+              filename="documents"
+            />
+            <DocumentFormDialog
+              trucks={trucks}
+              trigger={
+                <Button>
+                  <Plus /> Add document
+                </Button>
+              }
+            />
+          </>
+        }
+      />
+      <VehicleDocumentsDialog
+        vehicle={openVehicle}
+        trucks={trucks}
+        onClose={() => setOpenTruckId(null)}
+      />
+    </>
   )
 }

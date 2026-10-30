@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
+import { fetchAll } from "@/lib/supabase/fetch-all"
 import { PageHeader } from "@/components/page-header"
 import { SalaryTable } from "./salary-table"
 import type { DriverPick, StaffPick } from "./salary-form"
@@ -12,10 +13,14 @@ export default async function SalariesPage() {
   const supabase = await createClient()
 
   const [salaryRes, driverRes, staffRes, branchRes] = await Promise.all([
-    supabase
-      .from("salaries")
-      .select("*, branches(id, name)")
-      .order("month", { ascending: false }),
+    fetchAll<Salary>((from, to) =>
+      supabase
+        .from("salaries")
+        .select("*, branches(id, name)")
+        .order("month", { ascending: false })
+        .order("id")
+        .range(from, to)
+    ),
     supabase.from("drivers").select("id, name, branch_id").order("name"),
     supabase.from("profiles").select("id, full_name, branch_id").order("full_name"),
     user.isAdmin
@@ -30,7 +35,7 @@ export default async function SalariesPage() {
         description="Driver and staff salaries with bonus, deductions and payment status."
       />
       <SalaryTable
-        salaries={(salaryRes.data ?? []) as Salary[]}
+        salaries={salaryRes.data ?? []}
         drivers={(driverRes.data ?? []) as DriverPick[]}
         staff={(staffRes.data ?? []) as StaffPick[]}
         branches={(branchRes.data ?? []) as Pick<Branch, "id" | "name">[]}

@@ -16,21 +16,26 @@ export function StatCard({
   accent?: string
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-4 p-5">
+    <Card className="max-sm:py-0">
+      {/* Phones show these two to a row, so the icon sits above the figures. */}
+      <CardContent className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
         <div
           className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-lg",
+            "flex size-8 shrink-0 items-center justify-center rounded-lg sm:size-10",
             accent
           )}
         >
-          <Icon className="size-5" />
+          <Icon className="size-4 sm:size-5" />
         </div>
         <div className="min-w-0">
-          <p className="text-muted-foreground truncate text-sm">{title}</p>
-          <p className="text-2xl font-semibold tracking-tight">{value}</p>
+          <p className="text-muted-foreground text-xs sm:truncate sm:text-sm">
+            {title}
+          </p>
+          <p className="text-lg font-semibold tracking-tight break-words sm:text-2xl">
+            {value}
+          </p>
           {hint ? (
-            <p className="text-muted-foreground truncate text-xs">{hint}</p>
+            <p className="text-muted-foreground text-xs sm:truncate">{hint}</p>
           ) : null}
         </div>
       </CardContent>
